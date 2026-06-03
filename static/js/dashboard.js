@@ -15,6 +15,40 @@ let rWaveChart = null;
 let rCurrentChart = null;
 let windowReportMap = null;
 
+// Custom plugin to draw vertical and horizontal crosshair guide lines on hover
+const chartCrosshairPlugin = {
+    id: 'chartCrosshair',
+    afterDraw: (chart) => {
+        if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+            const activePoint = chart.tooltip._active[0];
+            const ctx = chart.ctx;
+            const x = activePoint.element.x;
+            const y = activePoint.element.y;
+            const topY = chart.chartArea.top;
+            const bottomY = chart.chartArea.bottom;
+            const leftX = chart.chartArea.left;
+            const rightX = chart.chartArea.right;
+            
+            ctx.save();
+            ctx.beginPath();
+            
+            // Vertical guide line
+            ctx.moveTo(x, topY);
+            ctx.lineTo(x, bottomY);
+            
+            // Horizontal guide line
+            ctx.moveTo(leftX, y);
+            ctx.lineTo(rightX, y);
+            
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+            ctx.setLineDash([3, 3]);
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     initTabs();
     initReportMenu();
@@ -295,16 +329,63 @@ function buildCharts(reports, cp) {
         responsive: true,
         maintainAspectRatio: false,
         spanGaps: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
         layout: {
             padding: { top: 10, bottom: 5, left: 5, right: 10 }
         },
         plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                titleColor: '#f3f4f6',
+                bodyColor: '#9ca3af',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                titleFont: {
+                    family: 'Outfit',
+                    size: 13,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    family: 'Inter',
+                    size: 12
+                },
+                padding: 10,
+                displayColors: true,
+                filter: function(tooltipItem) {
+                    return tooltipItem.raw !== null && tooltipItem.raw !== undefined;
+                },
+                callbacks: {
+                    title: function(context) {
+                        return `Date: ${context[0].label}`;
+                    },
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += context.parsed.y;
+                            if (label.toLowerCase().includes('speed')) {
+                                label += ' knots';
+                            } else if (label.toLowerCase().includes('cons') || label.toLowerCase().includes('rob') || label.toLowerCase().includes('drawdown')) {
+                                label += ' MT';
+                            }
+                        }
+                        return label;
+                    }
+                }
+            }
         },
         scales: {
             x: {
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#9ca3af', font: { family: 'Inter' } }
+                ticks: { display: false },
+                offset: true
             },
             y: {
                 min: speedBounds.min,
@@ -320,16 +401,63 @@ function buildCharts(reports, cp) {
         responsive: true,
         maintainAspectRatio: false,
         spanGaps: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
         layout: {
             padding: { top: 10, bottom: 5, left: 5, right: 10 }
         },
         plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                titleColor: '#f3f4f6',
+                bodyColor: '#9ca3af',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                titleFont: {
+                    family: 'Outfit',
+                    size: 13,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    family: 'Inter',
+                    size: 12
+                },
+                padding: 10,
+                displayColors: true,
+                filter: function(tooltipItem) {
+                    return tooltipItem.raw !== null && tooltipItem.raw !== undefined;
+                },
+                callbacks: {
+                    title: function(context) {
+                        return `Date: ${context[0].label}`;
+                    },
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += context.parsed.y;
+                            if (label.toLowerCase().includes('speed')) {
+                                label += ' knots';
+                            } else if (label.toLowerCase().includes('cons') || label.toLowerCase().includes('rob') || label.toLowerCase().includes('drawdown')) {
+                                label += ' MT';
+                            }
+                        }
+                        return label;
+                    }
+                }
+            }
         },
         scales: {
             x: {
                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#9ca3af', font: { family: 'Inter' } }
+                ticks: { display: false },
+                offset: true
             },
             y: {
                 min: fuelBounds.min,
@@ -379,7 +507,8 @@ function buildCharts(reports, cp) {
                 }
             ]
         },
-        options: speedChartOptions
+        options: speedChartOptions,
+        plugins: [chartCrosshairPlugin]
     });
 
     // Fuel Chart
@@ -421,7 +550,8 @@ function buildCharts(reports, cp) {
                 }
             ]
         },
-        options: fuelChartOptions
+        options: fuelChartOptions,
+        plugins: [chartCrosshairPlugin]
     });
 }
 
@@ -587,7 +717,7 @@ async function loadOfficialReportData() {
 }
 
 function buildPage7Charts(reports, cp) {
-    const labels = reports.map(r => r.date.substring(5));
+    const labels = reports.map(r => r.date);
     const lsfoCons = reports.map(r => r.fuel_consumed_me + r.fuel_consumed_ae + r.fuel_consumed_boiler);
     const lsfoROB = reports.map(r => r.fuel_vlsfo_rob);
     const speeds = reports.map(r => r.speed_actual > 0 ? r.speed_actual : null);
@@ -596,9 +726,61 @@ function buildPage7Charts(reports, cp) {
     const commonOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                titleColor: '#f3f4f6',
+                bodyColor: '#9ca3af',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                titleFont: {
+                    family: 'Outfit',
+                    size: 13,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    family: 'Inter',
+                    size: 12
+                },
+                padding: 10,
+                displayColors: true,
+                filter: function(tooltipItem) {
+                    return tooltipItem.raw !== null && tooltipItem.raw !== undefined;
+                },
+                callbacks: {
+                    title: function(context) {
+                        return `Date: ${context[0].label}`;
+                    },
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += context.parsed.y;
+                            if (label.toLowerCase().includes('speed')) {
+                                label += ' knots';
+                            } else if (label.toLowerCase().includes('cons') || label.toLowerCase().includes('rob') || label.toLowerCase().includes('drawdown')) {
+                                label += ' MT';
+                            }
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
         scales: {
-            x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } },
+            x: {
+                grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                ticks: { display: false },
+                offset: true
+            },
             y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
         }
     };
@@ -629,7 +811,8 @@ function buildPage7Charts(reports, cp) {
                     }
                 ]
             },
-            options: commonOptions
+            options: commonOptions,
+            plugins: [chartCrosshairPlugin]
         });
     }
 
@@ -642,6 +825,7 @@ function buildPage7Charts(reports, cp) {
             data: {
                 labels: labels,
                 datasets: [{
+                    label: 'LSFO ROB (MT)',
                     data: lsfoROB,
                     borderColor: '#00a8cc',
                     borderWidth: 2.5,
@@ -656,7 +840,8 @@ function buildPage7Charts(reports, cp) {
                     x: commonOptions.scales.x,
                     y: { min: 920, max: 980, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
                 }
-            }
+            },
+            plugins: [chartCrosshairPlugin]
         });
     }
 
@@ -670,7 +855,7 @@ function buildPage7Charts(reports, cp) {
                 labels: labels,
                 datasets: [
                     {
-                        label: 'Actual Speed',
+                        label: 'Actual Speed (knots)',
                         data: speeds,
                         borderColor: '#00a8cc',
                         borderWidth: 2.5,
@@ -679,7 +864,7 @@ function buildPage7Charts(reports, cp) {
                         fill: false
                     },
                     {
-                        label: 'Warranted Speed (12.5)',
+                        label: 'Warranted Speed (knots)',
                         data: Array(reports.length).fill(cp.speed_knots),
                         borderColor: '#ff4757',
                         borderDash: [5, 5],
@@ -694,7 +879,8 @@ function buildPage7Charts(reports, cp) {
                     x: commonOptions.scales.x,
                     y: { min: 8, max: 15, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
                 }
-            }
+            },
+            plugins: [chartCrosshairPlugin]
         });
     }
 
@@ -707,6 +893,7 @@ function buildPage7Charts(reports, cp) {
             data: {
                 labels: labels,
                 datasets: [{
+                    label: 'MGO ROB (MT)',
                     data: mgoROB,
                     borderColor: '#eccc68',
                     borderWidth: 2.5,
@@ -721,7 +908,8 @@ function buildPage7Charts(reports, cp) {
                     x: commonOptions.scales.x,
                     y: { min: 240, max: 250, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
                 }
-            }
+            },
+            plugins: [chartCrosshairPlugin]
         });
     }
 }
