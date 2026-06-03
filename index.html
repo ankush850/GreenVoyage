@@ -53,6 +53,12 @@
                     <span>Charter Claims</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="official-report">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>Official Report</span>
+                </a>
+            </li>
         </ul>
 
         <div class="sidebar-footer">
@@ -317,6 +323,587 @@
                                 <h4>Weather Exclusion Applied</h4>
                                 <p>No major weather exclusions were needed during the voyage (April 22-24) as winds remained below Beaufort 4. All sea days are valid for performance claim calculations.</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: OFFICIAL VOYAGE REPORT (10 Pages) -->
+        <div id="official-report" class="tab-content">
+            <div class="report-layout">
+                <!-- Left-hand report sub-navigation -->
+                <div class="report-sidebar">
+                    <ul class="report-menu">
+                        <li class="report-menu-item active" data-page="page1">Page 1: Report Summary</li>
+                        <li class="report-menu-item" data-page="page2">Page 2: CP Warranted Table</li>
+                        <li class="report-menu-item" data-page="page3">Page 3: Master Noon Report</li>
+                        <li class="report-menu-item" data-page="page4">Page 4: Engine Summary (ROB)</li>
+                        <li class="report-menu-item" data-page="page5">Page 5: Voyage Summary</li>
+                        <li class="report-menu-item" data-page="page6">Page 6: Engine Cons & ROB</li>
+                        <li class="report-menu-item" data-page="page7">Page 7: Visual Analysis</li>
+                        <li class="report-menu-item" data-page="page8">Page 8: System Efficiency</li>
+                        <li class="report-menu-item" data-page="page9">Page 9: Weather Analysis</li>
+                        <li class="report-menu-item" data-page="page10">Page 10: Voyage Detail Map</li>
+                    </ul>
+                </div>
+
+                <!-- Right-hand report content window -->
+                <div class="report-viewer-content">
+                    <!-- Page 1: Report Summary -->
+                    <div id="page1" class="report-page active">
+                        <div class="report-header">
+                            <h2>Vessel Performance Report — M/T DE XI</h2>
+                            <p>Ballast Voyage: Singapore EOPL to Sungai Linggi | 22 Apr – 30 Apr 2026</p>
+                            <div class="confidential-watermark">Confidential & Official</div>
+                        </div>
+                        <div class="report-summary-grid">
+                            <div class="report-summary-card">
+                                <h4>Reporting Days</h4>
+                                <div class="value">9</div>
+                                <div class="subtitle">Days (1 Port, 2 Sea, 6 Anchorage)</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>Total Distance</h4>
+                                <div class="value">234.03 nm</div>
+                                <div class="subtitle">Steaming Nautical Miles</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>Avg Speed (Stmg)</h4>
+                                <div class="value">10.35 kts</div>
+                                <div class="subtitle">CP Warranted: 12.5 kts (Eco)</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>LSFO Consumed</h4>
+                                <div class="value">46.987 MT</div>
+                                <div class="subtitle">Warranted: 49.5 MT</div>
+                            </div>
+                        </div>
+                        <div class="report-summary-grid" style="margin-top: 1rem;">
+                            <div class="report-summary-card">
+                                <h4>LSFO ROB (Close)</h4>
+                                <div class="value">926.27 MT</div>
+                                <div class="subtitle">Opening ROB: 970.68 MT</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>MGO Consumed</h4>
+                                <div class="value">4.274 MT</div>
+                                <div class="subtitle">Total MGO Consumption</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>MGO ROB (Close)</h4>
+                                <div class="value">246.24 MT</div>
+                                <div class="subtitle">Opening ROB: 242.98 MT</div>
+                            </div>
+                            <div class="report-summary-card">
+                                <h4>Avg Daily LSFO</h4>
+                                <div class="value">5.5 MT/day</div>
+                                <div class="subtitle">At Anchor / Port operations</div>
+                            </div>
+                        </div>
+                        <div class="narrative-card">
+                            <h3>Voyage Narrative Log</h3>
+                            <ul class="narrative-list">
+                                <li>Vessel anchored at Singapore EOPL on 22 Apr. LSFO ROB opened at 970.68 MT / MGO 242.98 MT.</li>
+                                <li>23 Apr: Vessel proceeded to Sungai Linggi (Malacca maneuvering) — 127.02 nm at avg 11.3 kts. Vessel was maneuvering only.</li>
+                                <li>24 Apr: Arrived Sungai Linggi (02°15.8N, 101°59.9E). Anchored awaiting load instructions — 7 days at anchor.</li>
+                                <li>No heavy weather recorded during the entire reporting period.</li>
+                                <li>Total fuel consumption LSFO: 46.987 MT (Breakdown — Main Engine: 12.477 MT | Auxiliary Engines: 25.05 MT | Boiler: 9.46 MT) | Total MGO: 4.274 MT.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Page 2: CP Warranted Table -->
+                    <div id="page2" class="report-page">
+                        <div class="report-header">
+                            <h2>Warranted Speed & Consumption Table</h2>
+                            <p>Charter Party warranted parameters for Ballast and Laden conditions.</p>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Speed</th>
+                                        <th>RPM (Laden)</th>
+                                        <th>ME VLSFO (MT/d)</th>
+                                        <th>AE FO (MT/d)</th>
+                                        <th>Boiler (MT/d)</th>
+                                        <th>RPM (Ballast)</th>
+                                        <th>ME VLSFO (MT/d)</th>
+                                        <th>AE FO (MT/d)</th>
+                                        <th>Boiler (MT/d)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="highlight-row">
+                                        <td><strong>12.5 Kts ★ ECO</strong></td>
+                                        <td>82-83</td>
+                                        <td>26.5</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td><strong>79-80</strong></td>
+                                        <td><strong>23.5</strong></td>
+                                        <td><strong>3.0</strong></td>
+                                        <td><strong>0.0</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>12.0 Kts</td>
+                                        <td>80-81</td>
+                                        <td>25.6</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td>78-79</td>
+                                        <td>22.8</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>11.5 Kts</td>
+                                        <td>79-80</td>
+                                        <td>24.7</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td>75-77</td>
+                                        <td>22.2</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>11.0 Kts</td>
+                                        <td>78-79</td>
+                                        <td>23.9</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td>74-75</td>
+                                        <td>21.6</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10.5 Kts</td>
+                                        <td>76-77</td>
+                                        <td>23.1</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td>72-73</td>
+                                        <td>21.1</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                    <tr>
+                                        <td>10.0 Kts</td>
+                                        <td>75-76</td>
+                                        <td>22.4</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                        <td>71-72</td>
+                                        <td>20.6</td>
+                                        <td>3.0</td>
+                                        <td>0.0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="narrative-card">
+                            <h3>Special Operation Consumption Warranty</h3>
+                            <div class="report-table-wrapper">
+                                <table class="report-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Operation</th>
+                                            <th>VLSFO (MT/Day)</th>
+                                            <th>AE FO (MT/Day)</th>
+                                            <th>Boiler (MT/Day)</th>
+                                            <th>Remarks</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="highlight-row">
+                                            <td><strong>Idle (in Port / at Anchorage) ★</strong></td>
+                                            <td><strong>5.5</strong></td>
+                                            <td><strong>3.0</strong></td>
+                                            <td><strong>2.5</strong></td>
+                                            <td><strong>★ APPLICABLE — this voyage (Sungai Linggi / SGP EOPL)</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Loading (including deballasting)</td>
+                                            <td>7.8</td>
+                                            <td>3.0</td>
+                                            <td>4.8</td>
+                                            <td>Condition depending</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Discharging (including running IG)</td>
+                                            <td>32.0</td>
+                                            <td>3.0</td>
+                                            <td>29.0</td>
+                                            <td>Condition depending</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ballast Exchange</td>
+                                            <td>6.5</td>
+                                            <td>3.0</td>
+                                            <td>3.5</td>
+                                            <td>Condition depending</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 3: Master Noon Report -->
+                    <div id="page3" class="report-page">
+                        <div class="report-header">
+                            <h2>Master Noon Report — Distance, Speed & Weather</h2>
+                            <p>Daily position reports recorded at 12:00 Local Time by the Master.</p>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Operation</th>
+                                        <th>Cond</th>
+                                        <th>Stm Hrs</th>
+                                        <th>Dist (nm)</th>
+                                        <th>Avg Spd</th>
+                                        <th>CP Spd</th>
+                                        <th>RPM</th>
+                                        <th>Slip %</th>
+                                        <th>Wind</th>
+                                        <th>Beaufort</th>
+                                        <th>Wave (m)</th>
+                                        <th>Current</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-noon-table-body">
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Page 4: Engine Summary (ROB) -->
+                    <div id="page4" class="report-page">
+                        <div class="report-header">
+                            <h2>Engine Summary — ROB & Consumption</h2>
+                            <p>Bunker Remaining On Board (ROB), fuel consumption breakdown, and Freshwater logs.</p>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Operation</th>
+                                        <th>ROB LSFO</th>
+                                        <th>ROB MGO</th>
+                                        <th>Warr MT/D</th>
+                                        <th>ME LSFO</th>
+                                        <th>AE LSFO</th>
+                                        <th>Boil LSFO</th>
+                                        <th>ME MGO</th>
+                                        <th>AE MGO</th>
+                                        <th>FW Cons</th>
+                                        <th>FW ROB</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-engine-table-body">
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Page 5: Voyage Summary -->
+                    <div id="page5" class="report-page">
+                        <div class="report-header">
+                            <h2>Voyage Summary — Actual vs Charter Party Warranted</h2>
+                            <p>Performance compliance check comparing actual voyage results against CP guarantees.</p>
+                        </div>
+                        <div class="grid-2-col">
+                            <div class="narrative-card">
+                                <h3>Chronological Leg Performance</h3>
+                                <div class="report-table-wrapper">
+                                    <table class="report-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Leg</th>
+                                                <th>Distance</th>
+                                                <th>Operation</th>
+                                                <th>Avg Speed</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>22-Apr</td>
+                                                <td>0.00 nm</td>
+                                                <td>Idle – SGP EOPL</td>
+                                                <td>0.00 kts</td>
+                                                <td><span class="badge badge-info">Below CP</span></td>
+                                            </tr>
+                                            <tr class="highlight-row">
+                                                <td>23-Apr</td>
+                                                <td>127.02 nm</td>
+                                                <td>Steaming / Transit</td>
+                                                <td>11.30 kts</td>
+                                                <td><span class="badge badge-warning">Manoeuvring Only</span></td>
+                                            </tr>
+                                            <tr class="highlight-row">
+                                                <td>24-Apr</td>
+                                                <td>107.01 nm</td>
+                                                <td>Manoeuvring/Anchor</td>
+                                                <td>11.70 kts</td>
+                                                <td><span class="badge badge-warning">Manoeuvring Only</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>25-30 Apr</td>
+                                                <td>0.00 nm</td>
+                                                <td>Idle – Sungai Linggi</td>
+                                                <td>0.00 kts</td>
+                                                <td><span class="badge badge-info">Below CP</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="narrative-card">
+                                <h3>Compliance Summary Matrix</h3>
+                                <div class="report-table-wrapper">
+                                    <table class="report-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Parameter</th>
+                                                <th>CP Warranted</th>
+                                                <th>Actual Voyage</th>
+                                                <th>Variance</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Avg Steaming Speed</td>
+                                                <td>12.50 Kts (Eco)</td>
+                                                <td><strong>10.35 Kts</strong></td>
+                                                <td><span class="badge badge-danger">-2.15 Kts</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total LSFO Consumed</td>
+                                                <td>49.500 MT</td>
+                                                <td><strong>46.987 MT</strong></td>
+                                                <td><span class="badge badge-success">-2.513 MT</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Avg Daily LSFO (Anch.)</td>
+                                                <td>5.50 MT/Day</td>
+                                                <td><strong>5.50 MT/Day</strong></td>
+                                                <td><span class="badge badge-success">0.00 MT/Day</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>MGO Consumed</td>
+                                                <td>—</td>
+                                                <td><strong>4.274 MT</strong></td>
+                                                <td>—</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Idle Days at Anchor</td>
+                                                <td>N/A</td>
+                                                <td><strong>8 Days</strong></td>
+                                                <td>—</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total Distance</td>
+                                                <td>—</td>
+                                                <td><strong>234.03 nm</strong></td>
+                                                <td>—</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 6: Engine Cons & ROB -->
+                    <div id="page6" class="report-page">
+                        <div class="report-header">
+                            <h2>Engine Summary — Consumption & Bunker ROB</h2>
+                            <p>Daily bunker consumption breakdown for ME, AE, and Boiler alongside ROB summaries.</p>
+                        </div>
+                        <div class="report-table-wrapper">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Operation</th>
+                                        <th>Stm Hrs</th>
+                                        <th>Dist (nm)</th>
+                                        <th>Spd (kts)</th>
+                                        <th>ME LSFO (MT)</th>
+                                        <th>AE LSFO (MT)</th>
+                                        <th>Boil LSFO (MT)</th>
+                                        <th>Total LSFO (MT)</th>
+                                        <th>Total MGO (MT)</th>
+                                        <th>RPM</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-cons-table-body">
+                                    <!-- Filled dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="grid-2-col">
+                            <div class="narrative-card">
+                                <h3>Bunker ROB Summary</h3>
+                                <div class="report-table-wrapper">
+                                    <table class="report-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Fuel Type</th>
+                                                <th>Opening ROB</th>
+                                                <th>Bunkers Rcvd</th>
+                                                <th>Total Consumed</th>
+                                                <th>Closing ROB</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>LSFO (VLSFO)</strong></td>
+                                                <td>970.68 MT</td>
+                                                <td>0.00 MT</td>
+                                                <td>46.987 MT</td>
+                                                <td><strong>926.27 MT</strong></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>MGO (LSMGO)</strong></td>
+                                                <td>242.98 MT</td>
+                                                <td>7.53 MT</td>
+                                                <td>4.274 MT</td>
+                                                <td><strong>246.24 MT</strong></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="narrative-card" style="display:flex; flex-direction:column; justify-content:center;">
+                                <p style="font-size:0.85rem; line-height:1.6; color:var(--text-secondary);">
+                                    *Note: A small bunker receipt of MGO was recorded during port stay. Total closing figures represent remaining volumes at the closing time of May 02, 2026.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 7: Visual Analysis -->
+                    <div id="page7" class="report-page">
+                        <div class="report-header">
+                            <h2>Visual Analysis — Fuel ROB & Daily Consumption Trends</h2>
+                            <p>Visualizing fuel drawdown curves, speed variance, and daily consumption limits.</p>
+                        </div>
+                        <div class="report-charts-grid">
+                            <div class="report-chart-card">
+                                <h4>Daily LSFO Consumption vs CP Warranted</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportLSFOConsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="report-chart-card">
+                                <h4>LSFO ROB Drawdown Curve (MT)</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportLSFOROBChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="report-charts-grid">
+                            <div class="report-chart-card">
+                                <h4>Actual Speed vs CP Warranted Speed</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportSpeedChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="report-chart-card">
+                                <h4>MGO ROB Curve (MT)</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportMGOROBChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 8: System Efficiency -->
+                    <div id="page8" class="report-page">
+                        <div class="report-header">
+                            <h2>Time Utilization & Fuel Efficiency</h2>
+                            <p>Voyage time breakdown and fuel consumption by systems for the 9-day reporting period.</p>
+                        </div>
+                        <div class="report-charts-grid">
+                            <div class="report-chart-card" style="height:320px;">
+                                <h4>Voyage Time Utilisation (9 Days)</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportTimeUtilChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="report-chart-card" style="height:320px;">
+                                <h4>LSFO Consumption by System (46.99 MT)</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportFuelUtilChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 9: Weather Analysis -->
+                    <div id="page9" class="report-page">
+                        <div class="report-header">
+                            <h2>Weather Analysis — Reported vs Actual</h2>
+                            <p>Comparison of reported weather data logs vs. actual marine forecast observations.</p>
+                        </div>
+                        <div class="report-charts-grid">
+                            <div class="report-chart-card">
+                                <h4>Beaufort Scale — Reported vs Actual</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportBeaufortChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="report-chart-card">
+                                <h4>Wind Speed (kts) — Reported vs Actual</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportWindChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="report-charts-grid">
+                            <div class="report-chart-card">
+                                <h4>Actual Wave Height & Swell Height (m)</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportWaveChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="report-chart-card">
+                                <h4>Current Speed (kts) — Actual Weather</h4>
+                                <div class="report-chart-wrapper">
+                                    <canvas id="reportCurrentChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Page 10: Voyage Detail Map -->
+                    <div id="page10" class="report-page">
+                        <div class="report-header">
+                            <h2>Voyage Detail Map</h2>
+                            <p>Visual track of Singapore EOPL to Sungai Linggi with numbered noon positions.</p>
+                        </div>
+                        <div style="height:450px; width:100%; border:1px solid var(--card-border); border-radius:12px; overflow:hidden;">
+                            <div id="reportMap" style="width:100%; height:100%; background:#111;"></div>
                         </div>
                     </div>
                 </div>
