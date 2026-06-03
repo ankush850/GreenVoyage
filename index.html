@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreenVoyage — Vessel Performance & Route Optimization</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar">
+        <div class="logo-container">
+            <i class="fa-solid fa-leaf" style="color: var(--secondary); text-shadow: 0 0 10px rgba(12,204,153,0.3);"></i>
+            <span class="logo-text" style="background: linear-gradient(135deg, #fff 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GreenVoyage</span>
+        </div>
+        
+        <div class="vessel-badge">
+            <h3>Vessel Profile</h3>
+            <p id="vessel-name-badge">DE XI</p>
+            <div class="vessel-details-mini">
+                <div><strong>Manager:</strong> <span id="vessel-manager">Kirkward Holdings</span></div>
+                <div><strong>Condition:</strong> <span class="badge badge-info" style="padding:1px 4px; font-size:10px;">IN BALLAST</span></div>
+                <div><strong>Voyage:</strong> <span id="vessel-voyage">SGP → Sungai Linggi</span></div>
+            </div>
+        </div>
+
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a class="nav-link active" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Performance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="map-opt">
+                    <i class="fa-solid fa-route"></i>
+                    <span>Voyage Optimizer</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-tab="claims">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <span>Charter Claims</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div>GreenVoyage Platform</div>
+            <div style="opacity: 0.5; margin-top: 4px;">Hackathon v1.0.0</div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+        
+        <!-- Header -->
+        <header>
+            <div class="page-title">
+                <h1 id="tab-title">Vessel Performance Dashboard</h1>
+                <p id="tab-subtitle">Real-time analysis against Charter Party warranted standards.</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="window.print()">
+                    <i class="fa-solid fa-print"></i> Export Report
+                </button>
+                <button class="btn btn-primary" onclick="refreshData()">
+                    <i class="fa-solid fa-rotate"></i> Refresh
+                </button>
+            </div>
+        </header>
+
+        <!-- TAB 1: PERFORMANCE DASHBOARD -->
+        <div id="dashboard" class="tab-content active">
+            <!-- KPI Cards -->
+            <div class="kpi-container">
+                <div class="kpi-card" id="kpi-speed-variance">
+                    <div class="kpi-header">
+                        <span>Speed Variance</span>
+                        <i class="fa-solid fa-gauge-high kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value" id="val-speed-var">-0.15 kn</div>
+                    <div class="kpi-sub" id="sub-speed-var">
+                        <span>Actual Avg: 11.75 kn / Warranted: 12.0 kn</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card" id="kpi-fuel-variance">
+                    <div class="kpi-header">
+                        <span>Daily Fuel Variance</span>
+                        <i class="fa-solid fa-oil-can kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value" id="val-fuel-var">-15.6 MT</div>
+                    <div class="kpi-sub" id="sub-fuel-var">
+                        <span>Avg ME: 12.4 MT/day / Warranted: 28.0 MT</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card status-good" id="kpi-status">
+                    <div class="kpi-header">
+                        <span>Performance Status</span>
+                        <i class="fa-solid fa-circle-check kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value" id="val-status">GOOD</div>
+                    <div class="kpi-sub">
+                        <span>Meeting warranted specifications</span>
+                    </div>
+                </div>
+
+                <div class="kpi-card status-good" id="kpi-offhire">
+                    <div class="kpi-header">
+                        <span>Off-Hire Claim Risk</span>
+                        <i class="fa-solid fa-shield-halved kpi-icon"></i>
+                    </div>
+                    <div class="kpi-value" id="val-offhire">LOW</div>
+                    <div class="kpi-sub">
+                        <span>No sustained speed underperformance</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span>Speed Profile (Daily vs. Warranted)</span>
+                        <div class="chart-legend-custom">
+                            <div class="legend-item"><div class="legend-color" style="background:#00a8cc;"></div>Actual</div>
+                            <div class="legend-item"><div class="legend-color" style="background:#ff4757; border-radius:0;"></div>Warranted</div>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="speedChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <span>Fuel Consumption Profile (Main Engine)</span>
+                        <div class="chart-legend-custom">
+                            <div class="legend-item"><div class="legend-color" style="background:#0c9;"></div>Actual</div>
+                            <div class="legend-item"><div class="legend-color" style="background:#ff4757; border-radius:0;"></div>Warranted</div>
+                        </div>
+                    </div>
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="fuelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Daily Log Table -->
+            <div class="table-card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h3 style="font-size:1.1rem; font-weight:600;">Daily Noon Log Analysis</h3>
+                    <span style="font-size:0.8rem; color:var(--text-secondary);">Showing 6 reports (COSP to EOSP & Port)</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Position (Lat/Lon)</th>
+                            <th>Actual Speed (kn)</th>
+                            <th>Engine RPM</th>
+                            <th>Slip %</th>
+                            <th>ME Cons (MT)</th>
+                            <th>Wind Beaufort</th>
+                            <th>Variance Indicator</th>
+                        </tr>
+                    </thead>
+                    <tbody id="noon-reports-table-body">
+                        <!-- Filled dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 2: VOYAGE OPTIMIZER & WEATHER -->
+        <div id="map-opt" class="tab-content">
+            <div class="map-optimization-grid">
+                <!-- Map -->
+                <div class="map-card">
+                    <div class="map-overlay-info">
+                        <strong style="color:var(--primary);">Route Planning Mode</strong><br/>
+                        <span id="route-meta-overlay">Loading routes...</span>
+                    </div>
+                    <div id="map"></div>
+                </div>
+
+                <!-- Optimization controls & summary -->
+                <div class="opt-details-card">
+                    <div>
+                        <div class="opt-section-title">Select Route Option</div>
+                        <div class="route-selector">
+                            <div class="route-option active" id="opt-direct" onclick="toggleRoute('direct')">
+                                <div class="route-option-header">
+                                    <span>Direct Route</span>
+                                    <span style="color:var(--accent);">221 NM</span>
+                                </div>
+                                <div class="route-option-meta">
+                                    Shortest pathway. Moderate weather risk.
+                                </div>
+                            </div>
+                            <div class="route-option" id="opt-optimized" onclick="toggleRoute('optimized')">
+                                <div class="route-option-header">
+                                    <span>Weather-Optimized</span>
+                                    <span style="color:var(--secondary);">235 NM</span>
+                                </div>
+                                <div class="route-option-meta">
+                                    Slightly longer route bypassing wind resistance.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="savings-highlight">
+                        <div>Estimated Savings</div>
+                        <div class="savings-val" id="opt-savings-val">1.7 MT Fuel</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            Approx. <span id="opt-dollars-saved">$986 USD</span> saved | <span id="opt-co2-saved">5.3t CO₂</span> reduction
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="opt-section-title">Route Summary</div>
+                        <div style="font-size:0.85rem; display:flex; flex-direction:column; gap:0.5rem;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-secondary);">Est. Duration:</span>
+                                <strong id="opt-summary-duration">18.4 hrs</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-secondary);">Main Engine Consumption:</span>
+                                <strong id="opt-summary-fuel">24.5 MT</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-secondary);">Max Wave Height:</span>
+                                <strong id="opt-summary-wave" style="color:var(--warning);">1.4m</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between;">
+                                <span style="color:var(--text-secondary);">Max Weather Beaufort:</span>
+                                <strong id="opt-summary-weather">BF 4</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="opt-section-title">Live Marine Weather Overlay</div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary); line-height:1.4;" id="weather-status-panel">
+                            Fetching latest wave & wind forecasts for coordinates along Malacca Strait...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: CHARTER CLAIMS -->
+        <div id="claims" class="tab-content">
+            <div class="claim-grid">
+                <!-- Charter Party warranted performance details -->
+                <div class="claim-card">
+                    <h3 style="font-size:1.15rem; font-weight:600; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-file-contract" style="color:var(--primary);"></i>
+                        Charter Party Warranted Details
+                    </h3>
+                    <div style="display:flex; flex-direction:column; gap:1rem; font-size:0.9rem;">
+                        <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <strong>Speed Warranty:</strong> 12.0 Knots in good weather.
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <strong>Consumption Warranty:</strong> Max 28.0 MT / day VLSFO in ballast.
+                        </div>
+                        <div style="background:rgba(255,255,255,0.02); padding:1rem; border-radius:8px; border:1px solid var(--card-border);">
+                            <strong>Good Weather definition:</strong> Beaufort scale &le; 4 (Wind &le; 16 knots), Douglas Sea State &le; 3 (Waves &le; 1.25m). No adverse currents.
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--text-secondary);">
+                            *Periods with weather exceeding these criteria are excluded from performance analysis under standard maritime claims.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Compliance claim opportunities -->
+                <div class="claim-card">
+                    <h3 style="font-size:1.15rem; font-weight:600; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fa-solid fa-circle-exclamation" style="color:var(--warning);"></i>
+                        Compliance & claims analysis
+                    </h3>
+                    <div class="claim-analysis-list">
+                        <div class="claim-item good">
+                            <div class="claim-item-icon"><i class="fa-solid fa-circle-check"></i></div>
+                            <div class="claim-item-content">
+                                <h4>Fuel Consumption Compliance</h4>
+                                <p>Average sea day consumption was 12.4 MT/day. This is 15.6 MT/day below the Charter Party warranted limit of 28.0 MT. Excellent fuel efficiency.</p>
+                            </div>
+                        </div>
+
+                        <div class="claim-item bad" id="speed-claim-box">
+                            <div class="claim-item-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+                            <div class="claim-item-content">
+                                <h4>Speed Warranty Variance</h4>
+                                <p>On April 23, the speed was 11.3 knots, which is 0.7 knots under the warranted 12.0 knots. Since the weather was Beaufort 2 (Good Weather), this constitutes a potential speed claim opportunity of $450 USD equivalent.</p>
+                            </div>
+                        </div>
+
+                        <div class="claim-item info">
+                            <div class="claim-item-icon"><i class="fa-solid fa-circle-info"></i></div>
+                            <div class="claim-item-content">
+                                <h4>Weather Exclusion Applied</h4>
+                                <p>No major weather exclusions were needed during the voyage (April 22-24) as winds remained below Beaufort 4. All sea days are valid for performance claim calculations.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom scripts -->
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script src="/static/js/map.js"></script>
+
+</body>
+</html>
