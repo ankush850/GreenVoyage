@@ -1,12 +1,17 @@
 import os
 import sys
 
-# Add workspace to path
-sys.path.append(r"g:\Vessel Performance")
+# Add workspace to path dynamically
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import parse_excel_noon_reports
 
-file_path = r"g:\Vessel Performance\NOON_REPORT_RANDOMIZED.xlsx"
+# Use sample excel file inside the repository
+file_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'PROMBLEM-STATEMENT',
+    'NOON REPORT- SAMPLE.xlsx'
+)
 print(f"Testing parsing on: {file_path}")
 
 try:

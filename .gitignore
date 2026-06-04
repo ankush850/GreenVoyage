@@ -35,3 +35,8 @@ active_env/
 
 # Log files
 *.log
+
+# Databases and Local Environment Files
+*.db
+.env
+

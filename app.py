@@ -3,12 +3,40 @@ Vessel Performance & Voyage Optimization Tool
 Flask Backend — Main Application
 """
 
-from flask import Flask, jsonify, send_from_directory
-from flask_cors import CORS
 import os
+import re
+import io
+import logging
+import sqlite3
+from datetime import datetime
+import openpyxl
+import requests as req
+from flask import Flask, jsonify, send_from_directory, request, g
+from flask_cors import CORS
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static', static_url_path='/static')
-CORS(app)
+
+# Security Configurations
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit uploads to 16MB
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'greenvoyage-fallback-secret-key-change-in-production')
+
+# Configure CORS origins based on environment variable
+allowed_origins = os.getenv('ALLOWED_ORIGINS', '*')
+if allowed_origins == '*':
+    CORS(app)
+else:
+    CORS(app, origins=allowed_origins.split(','))
 
 # ─────────────────────────────────────────────
 # STATIC DATA: DE XI Noon Report (Apr 2026)
@@ -342,11 +370,142 @@ def get_direction_label(val):
     except:
         return val_str
 
+def db_get_vessel_info():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT name, tech_manager, voyage, cargo, imo, period, delivery FROM vessel_info WHERE id = 1")
+    row = cursor.fetchone()
+    if row:
+        return dict(row)
+    return VESSEL_INFO
+
+def db_get_noon_reports():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM noon_report ORDER BY date ASC")
+    rows = cursor.fetchall()
+    return [dict(row) for row in rows]
+
+def init_db():
+    logger.info("Initializing database...")
+    with sqlite3.connect(DATABASE_PATH) as conn:
+        cursor = conn.cursor()
+        
+        # Create tables
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS vessel_info (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                name TEXT,
+                tech_manager TEXT,
+                voyage TEXT,
+                cargo TEXT,
+                imo TEXT,
+                period TEXT,
+                delivery TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS noon_report (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT UNIQUE,
+                lat REAL,
+                lon REAL,
+                status TEXT,
+                operation TEXT,
+                condition TEXT,
+                steaming_hrs REAL,
+                distance_sailed REAL,
+                speed_actual REAL,
+                speed_warranted REAL,
+                rpm INTEGER,
+                slip_pct REAL,
+                wind_dir TEXT,
+                wind_speed REAL,
+                wind_beaufort INTEGER,
+                wave_height REAL,
+                swell_dir TEXT,
+                swell_height REAL,
+                current_dir TEXT,
+                current_speed REAL,
+                fuel_vlsfo_rob REAL,
+                fuel_lsmgo_rob REAL,
+                fuel_consumed_me REAL,
+                fuel_consumed_ae REAL,
+                fuel_consumed_boiler REAL,
+                fuel_consumed_me_mgo REAL,
+                fuel_consumed_ae_mgo REAL,
+                fuel_consumed_boiler_mgo REAL,
+                fw_consumed REAL,
+                fw_rob REAL,
+                remarks TEXT
+            )
+        ''')
+        conn.commit()
+
+        # Seed data if tables are empty
+        cursor.execute("SELECT COUNT(*) FROM vessel_info")
+        if cursor.fetchone()[0] == 0:
+            logger.info("Seeding vessel_info table...")
+            cursor.execute('''
+                INSERT INTO vessel_info (id, name, tech_manager, voyage, cargo, imo, period, delivery)
+                VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                _seed_vessel["name"],
+                _seed_vessel["tech_manager"],
+                _seed_vessel["voyage"],
+                _seed_vessel["cargo"],
+                _seed_vessel["imo"],
+                _seed_vessel["period"],
+                _seed_vessel["delivery"]
+            ))
+            
+        cursor.execute("SELECT COUNT(*) FROM noon_report")
+        if cursor.fetchone()[0] == 0:
+            logger.info("Seeding noon_report table...")
+            for r in _seed_reports:
+                cursor.execute('''
+                    INSERT INTO noon_report (
+                        date, lat, lon, status, operation, condition, steaming_hrs, distance_sailed,
+                        speed_actual, speed_warranted, rpm, slip_pct, wind_dir, wind_speed, wind_beaufort,
+                        wave_height, swell_dir, swell_height, current_dir, current_speed, fuel_vlsfo_rob,
+                        fuel_lsmgo_rob, fuel_consumed_me, fuel_consumed_ae, fuel_consumed_boiler,
+                        fuel_consumed_me_mgo, fuel_consumed_ae_mgo, fuel_consumed_boiler_mgo,
+                        fw_consumed, fw_rob, remarks
+                    ) VALUES (
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                ''', (
+                    r["date"], r["lat"], r["lon"], r["status"], r["operation"], r["condition"], r["steaming_hrs"],
+                    r["distance_sailed"], r["speed_actual"], r["speed_warranted"], r["rpm"], r["slip_pct"],
+                    r["wind_dir"], r["wind_speed"], r["wind_beaufort"], r["wave_height"], r["swell_dir"],
+                    r["swell_height"], r["current_dir"], r["current_speed"], r["fuel_vlsfo_rob"], r["fuel_lsmgo_rob"],
+                    r["fuel_consumed_me"], r["fuel_consumed_ae"], r["fuel_consumed_boiler"], r["fuel_consumed_me_mgo"],
+                    r["fuel_consumed_ae_mgo"], r["fuel_consumed_boiler_mgo"], r["fw_consumed"], r["fw_rob"], r["remarks"]
+                ))
+            conn.commit()
+
+# Database file path configuration
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///greenvoyage.db')
+if DATABASE_URL.startswith('sqlite:///'):
+    DATABASE_PATH = DATABASE_URL.replace('sqlite:///', '')
+else:
+    DATABASE_PATH = 'greenvoyage.db'
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE_PATH)
+        db.row_factory = sqlite3.Row
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
 def load_data_from_pdf_text(filepath):
-    import os
-    import re
-    from datetime import datetime
-    
     if not os.path.exists(filepath):
         return None, None
         
@@ -354,7 +513,7 @@ def load_data_from_pdf_text(filepath):
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
     except Exception as e:
-        print(f"Error reading {filepath}: {e}")
+        logger.error(f"Error reading {filepath}: {e}")
         return None, None
         
     pages = content.split("=== Page")
@@ -573,17 +732,25 @@ def load_data_from_pdf_text(filepath):
         
     return vessel_name, reports
 
+# Setup seed values prior to seeding (allowing pdf_text load to override if file exists)
+_seed_vessel = dict(VESSEL_INFO)
+_seed_reports = list(NOON_REPORTS)
+
 # Try to load initial data from pdf_text.txt
 try:
-    import os
     _txt_path = os.path.join(os.path.dirname(__file__), 'pdf_text.txt')
     if os.path.exists(_txt_path):
         _parsed_vessel, _parsed_reports = load_data_from_pdf_text(_txt_path)
         if _parsed_vessel and _parsed_reports:
-            VESSEL_INFO["name"] = _parsed_vessel
-            NOON_REPORTS = _parsed_reports
+            _seed_vessel["name"] = _parsed_vessel
+            _seed_reports = _parsed_reports
+            logger.info("Loaded seed data from pdf_text.txt")
 except Exception as _e:
-    print(f"Warning: Failed to load start data from pdf_text.txt: {_e}")
+    logger.warning(f"Failed to load start data from pdf_text.txt: {_e}")
+
+# Initialize and seed database
+init_db()
+
 
 # Warranted performance (Charter Party)
 CP_WARRANTED = {
@@ -594,10 +761,6 @@ CP_WARRANTED = {
 }
 
 def parse_excel_noon_reports(file_source):
-    import openpyxl
-    from datetime import datetime
-    import re
-    
     wb = openpyxl.load_workbook(file_source, data_only=True)
     
     sheet = None
@@ -776,18 +939,21 @@ def parse_excel_noon_reports(file_source):
 # PERFORMANCE CALCULATIONS
 # ─────────────────────────────────────────────
 
-def calculate_performance_metrics():
+def calculate_performance_metrics(reports=None):
+    if reports is None:
+        reports = db_get_noon_reports()
+        
     # Only calculate average speed for days with actual movement
-    steaming_days = [r for r in NOON_REPORTS if r["distance_sailed"] > 0]
-    total_distance = sum(r["distance_sailed"] for r in NOON_REPORTS)
+    steaming_days = [r for r in reports if r["distance_sailed"] > 0]
+    total_distance = sum(r["distance_sailed"] for r in reports)
     
     avg_speed = sum(r["speed_actual"] for r in steaming_days) / len(steaming_days) if steaming_days else 10.35
     
-    total_lsfo_consumed = sum(r["fuel_consumed_me"] + r["fuel_consumed_ae"] + r["fuel_consumed_boiler"] for r in NOON_REPORTS)
-    total_mgo_consumed = sum(r["fuel_consumed_me_mgo"] + r["fuel_consumed_ae_mgo"] + r["fuel_consumed_boiler_mgo"] for r in NOON_REPORTS)
+    total_lsfo_consumed = sum(r["fuel_consumed_me"] + r["fuel_consumed_ae"] + r["fuel_consumed_boiler"] for r in reports)
+    total_mgo_consumed = sum(r["fuel_consumed_me_mgo"] + r["fuel_consumed_ae_mgo"] + r["fuel_consumed_boiler_mgo"] for r in reports)
     
     # Idle/anchorage days: status == "At Port" and steaming_hrs == 0
-    idle_days = len([r for r in NOON_REPORTS if r["status"] == "At Port" and r["steaming_hrs"] == 0])
+    idle_days = len([r for r in reports if r["status"] == "At Port" and r["steaming_hrs"] == 0])
 
     speed_variance = avg_speed - CP_WARRANTED["speed_knots"]
     speed_variance_pct = (speed_variance / CP_WARRANTED["speed_knots"]) * 100
@@ -827,25 +993,28 @@ def index():
 
 @app.route('/api/vessel')
 def vessel_info():
-    return jsonify(VESSEL_INFO)
+    return jsonify(db_get_vessel_info())
 
 @app.route('/api/noon-reports')
 def noon_reports():
-    return jsonify(NOON_REPORTS)
+    return jsonify(db_get_noon_reports())
 
 @app.route('/api/performance')
 def performance():
-    metrics = calculate_performance_metrics()
+    vessel = db_get_vessel_info()
+    reports = db_get_noon_reports()
+    metrics = calculate_performance_metrics(reports)
     return jsonify({
-        "vessel": VESSEL_INFO,
+        "vessel": vessel,
         "metrics": metrics,
         "cp_warranted": CP_WARRANTED,
-        "daily_data": NOON_REPORTS
+        "daily_data": reports
     })
 
 @app.route('/api/track')
 def vessel_track():
     """Return lat/lon positions for map plotting."""
+    reports = db_get_noon_reports()
     track = [
         {
             "date": r["date"],
@@ -855,7 +1024,7 @@ def vessel_track():
             "speed": r["speed_actual"],
             "beaufort": r["wind_beaufort"]
         }
-        for r in NOON_REPORTS
+        for r in reports
     ]
     return jsonify(track)
 
@@ -865,8 +1034,6 @@ def weather_route():
     Fetch marine weather from Open-Meteo along the Singapore → Sungai Linggi route.
     Uses a few waypoints along the route.
     """
-    import requests as req
-
     waypoints = [
         {"name": "Singapore", "lat": 1.29, "lon": 103.85},
         {"name": "Malacca Strait Entry", "lat": 1.50, "lon": 103.20},
@@ -976,9 +1143,6 @@ def route_optimize():
 
 @app.route('/api/upload-excel', methods=['POST'])
 def upload_excel():
-    from flask import request
-    import io
-    
     if 'file' not in request.files:
         return jsonify({"error": "No file part in the request"}), 400
         
@@ -994,51 +1158,95 @@ def upload_excel():
             if not parsed_reports:
                 return jsonify({"error": "No valid records found in the spreadsheet. Make sure you upload a valid Noon position report sheet."}), 400
                 
-            # Update global dataset in place
-            global NOON_REPORTS
-            NOON_REPORTS.clear()
-            NOON_REPORTS.extend(parsed_reports)
-            
-            # Extract Tech Manager and Vessel Name from the sheet if available
+            db = get_db()
+            cursor = db.cursor()
             try:
-                import openpyxl
-                file_bytes.seek(0)
-                wb = openpyxl.load_workbook(file_bytes, data_only=True)
-                sheet = None
-                for name in wb.sheetnames:
-                    if "GUIDELINE" in name.upper():
-                        continue
-                    sheet = wb[name]
-                    break
-                if sheet:
-                    for r in range(1, 20):
-                        val1 = str(sheet.cell(r, 1).value or "").strip().upper()
-                        if "VESSEL" in val1:
-                            val2 = sheet.cell(r, 2).value
-                            if val2:
-                                VESSEL_INFO["name"] = str(val2).strip()
-                        elif "TECH MANAGER" in val1:
-                            val2 = sheet.cell(r, 2).value
-                            if val2:
-                                VESSEL_INFO["tech_manager"] = str(val2).strip()
-            except Exception as e:
-                print(f"Warning extracting vessel info: {e}")
+                # 1. Clear old reports
+                cursor.execute("DELETE FROM noon_report")
+                
+                # 2. Insert new reports
+                for r in parsed_reports:
+                    cursor.execute('''
+                        INSERT INTO noon_report (
+                            date, lat, lon, status, operation, condition, steaming_hrs, distance_sailed,
+                            speed_actual, speed_warranted, rpm, slip_pct, wind_dir, wind_speed, wind_beaufort,
+                            wave_height, swell_dir, swell_height, current_dir, current_speed, fuel_vlsfo_rob,
+                            fuel_lsmgo_rob, fuel_consumed_me, fuel_consumed_ae, fuel_consumed_boiler,
+                            fuel_consumed_me_mgo, fuel_consumed_ae_mgo, fuel_consumed_boiler_mgo,
+                            fw_consumed, fw_rob, remarks
+                        ) VALUES (
+                            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                        )
+                    ''', (
+                        r["date"], r["lat"], r["lon"], r["status"], r["operation"], r["condition"], r["steaming_hrs"],
+                        r["distance_sailed"], r["speed_actual"], r["speed_warranted"], r["rpm"], r["slip_pct"],
+                        r["wind_dir"], r["wind_speed"], r["wind_beaufort"], r["wave_height"], r["swell_dir"],
+                        r["swell_height"], r["current_dir"], r["current_speed"], r["fuel_vlsfo_rob"], r["fuel_lsmgo_rob"],
+                        r["fuel_consumed_me"], r["fuel_consumed_ae"], r["fuel_consumed_boiler"], r["fuel_consumed_me_mgo"],
+                        r["fuel_consumed_ae_mgo"], r["fuel_consumed_boiler_mgo"], r["fw_consumed"], r["fw_rob"], r["remarks"]
+                    ))
+                
+                # 3. Extract Tech Manager and Vessel Name from the sheet if available
+                vessel_updates = {}
+                try:
+                    file_bytes.seek(0)
+                    wb = openpyxl.load_workbook(file_bytes, data_only=True)
+                    sheet = None
+                    for name in wb.sheetnames:
+                        if "GUIDELINE" in name.upper():
+                            continue
+                        sheet = wb[name]
+                        break
+                    if sheet:
+                        for r_idx in range(1, 20):
+                            val1 = str(sheet.cell(r_idx, 1).value or "").strip().upper()
+                            if "VESSEL" in val1:
+                                val2 = sheet.cell(r_idx, 2).value
+                                if val2:
+                                    vessel_updates["name"] = str(val2).strip()
+                            elif "TECH MANAGER" in val1:
+                                val2 = sheet.cell(r_idx, 2).value
+                                if val2:
+                                    vessel_updates["tech_manager"] = str(val2).strip()
+                except Exception as e:
+                    logger.warning(f"Failed to extract vessel info from uploaded sheet: {e}")
+
+                if vessel_updates:
+                    for key, val in vessel_updates.items():
+                        cursor.execute(f"UPDATE vessel_info SET {key} = ? WHERE id = 1", (val,))
+                
+                db.commit()
+            except Exception as db_e:
+                db.rollback()
+                raise db_e
                 
             return jsonify({
                 "message": "File parsed successfully",
                 "count": len(parsed_reports),
-                "vessel": VESSEL_INFO
+                "vessel": db_get_vessel_info()
             })
             
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logger.exception("Failed to parse or save uploaded Excel file")
             return jsonify({"error": f"Failed to parse Excel file: {str(e)}"}), 500
     else:
         return jsonify({"error": "Invalid file type. Only .xlsx files are supported."}), 400
 
 
 if __name__ == '__main__':
-    print("Vessel Performance & Voyage Optimization Tool")
-    print("   Starting at http://localhost:5000")
-    app.run(debug=True, port=5000)
+    host = os.getenv('HOST', '127.0.0.1')
+    try:
+        port = int(os.getenv('PORT', 5000))
+    except ValueError:
+        port = 5000
+    
+    flask_env = os.getenv('FLASK_ENV', 'production')
+    
+    logger.info("Vessel Performance & Voyage Optimization Tool starting...")
+    if flask_env == 'production':
+        logger.info(f"Starting Waitress production server at http://{host}:{port}")
+        from waitress import serve
+        serve(app, host=host, port=port)
+    else:
+        logger.info(f"Starting Flask development server at http://{host}:{port} (debug=True)")
+        app.run(host=host, port=port, debug=True)
