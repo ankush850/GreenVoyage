@@ -20,7 +20,7 @@
     <!-- Sidebar Navigation -->
     <nav class="sidebar">
         <div class="logo-container">
-            <i class="fa-solid fa-leaf" style="color: var(--secondary); text-shadow: 0 0 10px rgba(12,204,153,0.3);"></i>
+            <i class="fa-solid fa-leaf" style="color: var(--secondary); text-shadow: 0 0 10px rgba(0,255,136,0.3);"></i>
             <span class="logo-text" style="background: linear-gradient(135deg, #fff 0%, var(--secondary) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">GreenVoyage</span>
         </div>
         
@@ -77,7 +77,11 @@
                 <p id="tab-subtitle">Real-time analysis against Charter Party warranted standards.</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-secondary" onclick="window.print()">
+                <label for="excel-upload" class="btn btn-secondary" style="margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <i class="fa-solid fa-file-excel" style="color: #2ecc71;"></i> Upload Noon Log (.xlsx)
+                    <input type="file" id="excel-upload" accept=".xlsx" style="display: none;" onchange="uploadExcel(this)" />
+                </label>
+                <button class="btn btn-secondary" onclick="exportReport()">
                     <i class="fa-solid fa-print"></i> Export Report
                 </button>
                 <button class="btn btn-primary" onclick="refreshData()">
@@ -141,8 +145,8 @@
                     <div class="chart-title">
                         <span>Speed Profile (Daily vs. Warranted)</span>
                         <div class="chart-legend-custom">
-                            <div class="legend-item"><div class="legend-color" style="background:#00a8cc;"></div>Actual</div>
-                            <div class="legend-item"><div class="legend-color" style="background:#ff4757; border-radius:0;"></div>Warranted</div>
+                            <div class="legend-item"><div class="legend-color" style="background:var(--primary);"></div>Actual</div>
+                            <div class="legend-item"><div class="legend-color" style="background:var(--accent); border-radius:0;"></div>Warranted</div>
                         </div>
                     </div>
                     <div style="position: relative; height: 260px; width: 100%;">
@@ -154,8 +158,8 @@
                     <div class="chart-title">
                         <span>Fuel Consumption Profile (Main Engine)</span>
                         <div class="chart-legend-custom">
-                            <div class="legend-item"><div class="legend-color" style="background:#0c9;"></div>Actual</div>
-                            <div class="legend-item"><div class="legend-color" style="background:#ff4757; border-radius:0;"></div>Warranted</div>
+                            <div class="legend-item"><div class="legend-color" style="background:var(--secondary);"></div>Actual</div>
+                            <div class="legend-item"><div class="legend-color" style="background:var(--accent); border-radius:0;"></div>Warranted</div>
                         </div>
                     </div>
                     <div style="position: relative; height: 260px; width: 100%;">
@@ -359,62 +363,58 @@
                     <!-- Page 1: Report Summary -->
                     <div id="page1" class="report-page active">
                         <div class="report-header">
-                            <h2>Vessel Performance Report — M/T DE XI</h2>
-                            <p>Ballast Voyage: Singapore EOPL to Sungai Linggi | 22 Apr – 30 Apr 2026</p>
+                            <h2 id="report-title">Vessel Performance Report — M/T DE XI</h2>
+                            <p id="report-subtitle">Ballast Voyage: Singapore EOPL to Sungai Linggi | 22 Apr – 30 Apr 2026</p>
                             <div class="confidential-watermark">Confidential & Official</div>
                         </div>
                         <div class="report-summary-grid">
                             <div class="report-summary-card">
                                 <h4>Reporting Days</h4>
-                                <div class="value">9</div>
-                                <div class="subtitle">Days (1 Port, 2 Sea, 6 Anchorage)</div>
+                                <div class="value" id="p1-val-days">9</div>
+                                <div class="subtitle" id="p1-sub-days">Days (1 Port, 2 Sea, 6 Anchorage)</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>Total Distance</h4>
-                                <div class="value">234.03 nm</div>
+                                <div class="value" id="p1-val-dist">234.03 nm</div>
                                 <div class="subtitle">Steaming Nautical Miles</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>Avg Speed (Stmg)</h4>
-                                <div class="value">10.35 kts</div>
-                                <div class="subtitle">CP Warranted: 12.5 kts (Eco)</div>
+                                <div class="value" id="p1-val-speed">10.35 kts</div>
+                                <div class="subtitle" id="p1-sub-speed">CP Warranted: 12.5 kts (Eco)</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>LSFO Consumed</h4>
-                                <div class="value">46.987 MT</div>
-                                <div class="subtitle">Warranted: 49.5 MT</div>
+                                <div class="value" id="p1-val-lsfo">46.987 MT</div>
+                                <div class="subtitle" id="p1-sub-lsfo">Warranted: 49.5 MT</div>
                             </div>
                         </div>
                         <div class="report-summary-grid" style="margin-top: 1rem;">
                             <div class="report-summary-card">
                                 <h4>LSFO ROB (Close)</h4>
-                                <div class="value">926.27 MT</div>
-                                <div class="subtitle">Opening ROB: 970.68 MT</div>
+                                <div class="value" id="p1-val-lsfo-rob">926.27 MT</div>
+                                <div class="subtitle" id="p1-sub-lsfo-rob">Opening ROB: 970.68 MT</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>MGO Consumed</h4>
-                                <div class="value">4.274 MT</div>
+                                <div class="value" id="p1-val-mgo">4.274 MT</div>
                                 <div class="subtitle">Total MGO Consumption</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>MGO ROB (Close)</h4>
-                                <div class="value">246.24 MT</div>
-                                <div class="subtitle">Opening ROB: 242.98 MT</div>
+                                <div class="value" id="p1-val-mgo-rob">246.24 MT</div>
+                                <div class="subtitle" id="p1-sub-mgo-rob">Opening ROB: 242.98 MT</div>
                             </div>
                             <div class="report-summary-card">
                                 <h4>Avg Daily LSFO</h4>
-                                <div class="value">5.5 MT/day</div>
-                                <div class="subtitle">At Anchor / Port operations</div>
+                                <div class="value" id="p1-val-daily-lsfo">5.5 MT/day</div>
+                                <div class="subtitle" id="p1-sub-daily-lsfo">At Anchor / Port operations</div>
                             </div>
                         </div>
                         <div class="narrative-card">
                             <h3>Voyage Narrative Log</h3>
-                            <ul class="narrative-list">
-                                <li>Vessel anchored at Singapore EOPL on 22 Apr. LSFO ROB opened at 970.68 MT / MGO 242.98 MT.</li>
-                                <li>23 Apr: Vessel proceeded to Sungai Linggi (Malacca maneuvering) — 127.02 nm at avg 11.3 kts. Vessel was maneuvering only.</li>
-                                <li>24 Apr: Arrived Sungai Linggi (02°15.8N, 101°59.9E). Anchored awaiting load instructions — 7 days at anchor.</li>
-                                <li>No heavy weather recorded during the entire reporting period.</li>
-                                <li>Total fuel consumption LSFO: 46.987 MT (Breakdown — Main Engine: 12.477 MT | Auxiliary Engines: 25.05 MT | Boiler: 9.46 MT) | Total MGO: 4.274 MT.</li>
+                            <ul class="narrative-list" id="p1-narrative-list">
+                                <!-- Filled dynamically -->
                             </ul>
                         </div>
                     </div>
@@ -643,35 +643,8 @@
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>22-Apr</td>
-                                                <td>0.00 nm</td>
-                                                <td>Idle – SGP EOPL</td>
-                                                <td>0.00 kts</td>
-                                                <td><span class="badge badge-info">Below CP</span></td>
-                                            </tr>
-                                            <tr class="highlight-row">
-                                                <td>23-Apr</td>
-                                                <td>127.02 nm</td>
-                                                <td>Steaming / Transit</td>
-                                                <td>11.30 kts</td>
-                                                <td><span class="badge badge-warning">Manoeuvring Only</span></td>
-                                            </tr>
-                                            <tr class="highlight-row">
-                                                <td>24-Apr</td>
-                                                <td>107.01 nm</td>
-                                                <td>Manoeuvring/Anchor</td>
-                                                <td>11.70 kts</td>
-                                                <td><span class="badge badge-warning">Manoeuvring Only</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>25-30 Apr</td>
-                                                <td>0.00 nm</td>
-                                                <td>Idle – Sungai Linggi</td>
-                                                <td>0.00 kts</td>
-                                                <td><span class="badge badge-info">Below CP</span></td>
-                                            </tr>
+                                        <tbody id="report-leg-table-body">
+                                            <!-- Filled dynamically -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -688,43 +661,8 @@
                                                 <th>Variance</th>
                                             </tr>
                                         </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>Avg Steaming Speed</td>
-                                                <td>12.50 Kts (Eco)</td>
-                                                <td><strong>10.35 Kts</strong></td>
-                                                <td><span class="badge badge-danger">-2.15 Kts</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Total LSFO Consumed</td>
-                                                <td>49.500 MT</td>
-                                                <td><strong>46.987 MT</strong></td>
-                                                <td><span class="badge badge-success">-2.513 MT</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>Avg Daily LSFO (Anch.)</td>
-                                                <td>5.50 MT/Day</td>
-                                                <td><strong>5.50 MT/Day</strong></td>
-                                                <td><span class="badge badge-success">0.00 MT/Day</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>MGO Consumed</td>
-                                                <td>—</td>
-                                                <td><strong>4.274 MT</strong></td>
-                                                <td>—</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Idle Days at Anchor</td>
-                                                <td>N/A</td>
-                                                <td><strong>8 Days</strong></td>
-                                                <td>—</td>
-                                            </tr>
-                                            <tr>
-                                                <td>Total Distance</td>
-                                                <td>—</td>
-                                                <td><strong>234.03 nm</strong></td>
-                                                <td>—</td>
-                                            </tr>
+                                        <tbody id="report-matrix-table-body">
+                                            <!-- Filled dynamically -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -903,7 +841,7 @@
                             <p>Visual track of Singapore EOPL to Sungai Linggi with numbered noon positions.</p>
                         </div>
                         <div style="height:450px; width:100%; border:1px solid var(--card-border); border-radius:12px; overflow:hidden;">
-                            <div id="reportMap" style="width:100%; height:100%; background:#111;"></div>
+                            <div id="reportMap" style="width:100%; height:100%; background:#000;"></div>
                         </div>
                     </div>
                 </div>

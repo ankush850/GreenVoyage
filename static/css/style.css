@@ -1,16 +1,16 @@
 :root {
-    --bg-dark: #0f141c;
-    --card-bg: rgba(22, 28, 38, 0.7);
-    --card-border: rgba(255, 255, 255, 0.08);
-    --card-glow: rgba(0, 168, 204, 0.1);
+    --bg-dark: #030303;
+    --card-bg: rgba(12, 12, 14, 0.8);
+    --card-border: rgba(255, 255, 255, 0.05);
+    --card-glow: rgba(0, 229, 255, 0.05);
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
-    --primary: #00a8cc;
-    --primary-glow: rgba(0, 168, 204, 0.3);
-    --secondary: #0c9;
-    --accent: #ff4757;
-    --accent-glow: rgba(255, 71, 87, 0.2);
-    --warning: #ffa502;
+    --primary: #00e5ff;
+    --primary-glow: rgba(0, 229, 255, 0.25);
+    --secondary: #00ff88;
+    --accent: #ff3b30;
+    --accent-glow: rgba(255, 59, 48, 0.2);
+    --warning: #ffb300;
     --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --sidebar-width: 280px;
@@ -51,7 +51,7 @@ body {
 /* Sidebar */
 .sidebar {
     width: var(--sidebar-width);
-    background: rgba(15, 20, 28, 0.95);
+    background: rgba(5, 5, 5, 0.98);
     border-right: 1px solid var(--card-border);
     display: flex;
     flex-direction: column;
@@ -667,13 +667,19 @@ tr:hover td {
 }
 
 .report-page {
-    display: none;
+    visibility: hidden;
+    position: absolute;
+    left: -9999px;
+    width: 100%;
     flex-direction: column;
     gap: 1.5rem;
     animation: fadeIn 0.25s ease-out;
 }
 
 .report-page.active {
+    visibility: visible;
+    position: relative;
+    left: 0;
     display: flex;
 }
 
@@ -815,7 +821,7 @@ tr:hover td {
 }
 
 .report-table th {
-    background: rgba(15, 20, 28, 0.8);
+    background: rgba(10, 10, 12, 0.9);
     color: var(--text-secondary);
     font-weight: 600;
     padding: 0.75rem;
@@ -891,5 +897,236 @@ tr:hover td {
     }
     #map {
         height: 400px;
+    }
+}
+
+/* ─────────────────────────────────────────────
+   PRINT-OPTIMIZED STYLES (Export as PDF)
+   ───────────────────────────────────────────── */
+@media print {
+    /* Set page margins and size */
+    @page {
+        size: A4 portrait;
+        margin: 1.5cm;
+    }
+
+    /* Set clean light theme backgrounds and colors */
+    body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-size: 10pt !important;
+    }
+
+    /* Hide screen-only dashboard navigation and UI panels */
+    .sidebar,
+    header,
+    .nav-links,
+    .report-sidebar,
+    .header-actions,
+    .logo-container,
+    .vessel-badge,
+    .sidebar-footer {
+        display: none !important;
+    }
+
+    /* Reset content margins to full width */
+    .main-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+        display: block !important;
+        width: 100% !important;
+    }
+
+    #official-report,
+    .report-layout {
+        display: block !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #ffffff !important;
+    }
+
+    .report-viewer-content {
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        width: 100% !important;
+        display: block !important;
+    }
+
+    /* Print all 10 pages in sequence, forcing page breaks */
+    .report-page {
+        display: flex !important;
+        visibility: visible !important;
+        position: relative !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        margin-bottom: 2cm !important;
+        padding: 0.5cm 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Specific element styling for print readability */
+    .report-header {
+        border-bottom: 2px solid #e5e7eb !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .report-header h2 {
+        color: #111827 !important;
+        font-size: 16pt !important;
+    }
+
+    .report-header p {
+        color: #4b5563 !important;
+        font-size: 9pt !important;
+    }
+
+    .confidential-watermark {
+        color: #dc2626 !important; /* Bold red watermark */
+        font-size: 8pt !important;
+    }
+
+    /* Summary cards: light theme */
+    .report-summary-card {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+
+    .report-summary-card h4 {
+        color: #4b5563 !important;
+    }
+
+    .report-summary-card .value {
+        color: #111827 !important;
+    }
+
+    .report-summary-card .subtitle {
+        color: #6b7280 !important;
+    }
+
+    /* Narrative text formatting */
+    .narrative-card {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+    }
+
+    .narrative-card h3 {
+        color: #0369a1 !important; /* Steel blue headers */
+    }
+
+    .narrative-list li {
+        color: #1f2937 !important;
+    }
+
+    .narrative-list li::before {
+        color: #0284c7 !important;
+    }
+
+    /* Table styling for print */
+    .report-table-wrapper {
+        border: 1px solid #d1d5db !important;
+        background: #ffffff !important;
+        border-radius: 8px !important;
+    }
+
+    .report-table th {
+        background: #f3f4f6 !important;
+        color: #374151 !important;
+        border-bottom: 2px solid #d1d5db !important;
+    }
+
+    .report-table td {
+        border-bottom: 1px solid #e5e7eb !important;
+        color: #1f2937 !important;
+    }
+
+    .report-table tr.highlight-row td {
+        background: #f0f9ff !important;
+        border-top: 1px solid #bae6fd !important;
+        border-bottom: 1px solid #bae6fd !important;
+        color: #0369a1 !important;
+    }
+
+    .report-table tr.total-row td {
+        background: #f3f4f6 !important;
+        border-top: 2px solid #d1d5db !important;
+        border-bottom: 2px solid #d1d5db !important;
+        color: #111827 !important;
+    }
+
+    /* Badge printing corrections */
+    .badge {
+        border: 1px solid #d1d5db !important;
+        print-color-adjust: exact !important;
+        -webkit-print-color-adjust: exact !important;
+    }
+    
+    .badge-success {
+        background-color: #d1fae5 !important;
+        color: #065f46 !important;
+        border-color: #a7f3d0 !important;
+    }
+
+    .badge-danger {
+        background-color: #fee2e2 !important;
+        color: #991b1b !important;
+        border-color: #fca5a5 !important;
+    }
+
+    .badge-warning {
+        background-color: #fef3c7 !important;
+        color: #92400e !important;
+        border-color: #fde68a !important;
+    }
+
+    .badge-info {
+        background-color: #e0f2fe !important;
+        color: #075985 !important;
+        border-color: #bae6fd !important;
+    }
+
+    /* Print layout for charts: make sure they display side-by-side */
+    .report-charts-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1.25rem !important;
+        width: 100% !important;
+    }
+
+    .report-chart-card {
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 8px !important;
+        height: 220px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    .report-chart-card h4 {
+        color: #1f2937 !important;
+    }
+
+    /* Avoid page-breaks inside grid sections */
+    .grid-2-col, .grid-3-col {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1.25rem !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+    }
+
+    /* Map card formatting */
+    #reportMap {
+        border: 1px solid #d1d5db !important;
+        border-radius: 8px !important;
     }
 }
