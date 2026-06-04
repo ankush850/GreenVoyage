@@ -326,6 +326,265 @@ NOON_REPORTS = [
     }
 ]
 
+def get_direction_label(val):
+    if val is None or str(val).strip() in ["-", "N/A", ""]:
+        return "—"
+    val_str = str(val).strip()
+    try:
+        num = float(val_str)
+        mapping = {
+            1.0: "N", 2.0: "NNE", 3.0: "NE", 4.0: "ENE",
+            5.0: "E", 6.0: "ESE", 7.0: "SE", 8.0: "SSE",
+            9.0: "S", 10.0: "SSW", 11.0: "SW", 12.0: "WSW",
+            13.0: "W", 14.0: "WNW", 15.0: "NW", 16.0: "NNW"
+        }
+        return mapping.get(num, val_str)
+    except:
+        return val_str
+
+def load_data_from_pdf_text(filepath):
+    import os
+    import re
+    from datetime import datetime
+    
+    if not os.path.exists(filepath):
+        return None, None
+        
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+        return None, None
+        
+    pages = content.split("=== Page")
+    if len(pages) <= 1:
+        return None, None
+        
+    # 1. Parse Vessel Name from Page 1
+    vessel_name = "XYZ"
+    p1 = pages[1]
+    for line in p1.split("\n"):
+        if "V E S S E L  P E R F O R M A N C E  R E P O R T" in line:
+            continue
+        cleaned = line.strip()
+        if cleaned:
+            if "M/V" in cleaned or "M/T" in cleaned or "XYZ" in cleaned:
+                vessel_name = cleaned.replace("M/V", "").replace("M/T", "").strip()
+                break
+                
+    # 2. Parse Page 6 for steaming hours, operation, and remarks
+    p6 = pages[6] if len(pages) > 6 else ""
+    date_regex = re.compile(r"^\s*([0-3][0-9]-[A-Za-z]{3})")
+    
+    page6_data = {}
+    for line in p6.split("\n"):
+        line = line.strip()
+        if not line or "TOTAL" in line.upper():
+            continue
+        m = date_regex.match(line)
+        if m:
+            date_label = m.group(1)
+            tokens = re.split(r"\s+", line)
+            page6_data[date_label] = {
+                "operation": tokens[1],
+                "steaming_hrs": float(tokens[2]) if tokens[2] not in ["-", "N/A"] else 0.0,
+                "remarks": " ".join(tokens[11:]) if len(tokens) > 11 else ""
+            }
+            
+    # 3. Parse Page 3 for wind, waves, currents
+    p3 = pages[3] if len(pages) > 3 else ""
+    page3_data = {}
+    for line in p3.split("\n"):
+        line = line.strip()
+        if not line or "TOTAL" in line.upper():
+            continue
+        m = date_regex.match(line)
+        if m:
+            date_label = m.group(1)
+            tokens = re.split(r"\s+", line)
+            try:
+                page3_data[date_label] = {
+                    "current_speed": float(tokens[-1]) if tokens[-1] not in ["-", "N/A", ""] else 0.0,
+                    "current_dir": get_direction_label(tokens[-2]),
+                    "swell_height": float(tokens[-3]) if tokens[-3] not in ["-", "N/A", ""] else 0.0,
+                    "swell_dir": get_direction_label(tokens[-4]),
+                    "wave_height": float(tokens[-5]) if tokens[-5] not in ["-", "N/A", ""] else 0.0,
+                    "wind_beaufort": int(tokens[-6]) if tokens[-6] not in ["-", "N/A", ""] else 0,
+                    "wind_speed": float(tokens[-7]) if tokens[-7] not in ["-", "N/A", ""] else 0.0,
+                    "wind_dir": get_direction_label(tokens[-8])
+                }
+            except:
+                pass
+                
+    # 4. Parse Page 4 for bunkers and final records
+    p4 = pages[4] if len(pages) > 4 else ""
+    reports = []
+    
+    current_date = None
+    for line in p4.split("\n"):
+        line = line.strip()
+        if not line or "TOTAL" in line.upper():
+            continue
+            
+        if re.match(r"^\d+-[A-Za-z]{3}$", line):
+            current_date = line
+            continue
+            
+        m = date_regex.match(line)
+        tokens = re.split(r"\s+", line)
+        
+        # If the line starts with time e.g. "12:00"
+        if re.match(r"^\d{2}:\d{2}", tokens[0]):
+            if current_date:
+                date_label = current_date
+                time_label = tokens[0]
+                is_starts_with_date = False
+            else:
+                continue
+        elif m:
+            date_label = m.group(1)
+            time_label = "12:00" # default
+            is_starts_with_date = True
+        else:
+            continue
+            
+        # Ignore "00:01" Delivery row
+        if time_label == "00:01":
+            continue
+            
+        # Extract lat/lon tokens
+        idx_at = -1
+        for idx in range(len(tokens)):
+            if tokens[idx] == "At":
+                idx_at = idx
+                break
+        
+        lat_val = 0.0
+        lon_val = 0.0
+        if idx_at != -1:
+            lat_tokens = []
+            lon_tokens = []
+            
+            if is_starts_with_date:
+                if len(tokens) > 1 and re.match(r"^\d{2}:\d{2}", tokens[1]):
+                    coord_tokens = tokens[2:idx_at]
+                else:
+                    coord_tokens = tokens[1:idx_at]
+            else:
+                coord_tokens = tokens[1:idx_at]
+            
+            split_idx = -1
+            for k in range(len(coord_tokens)):
+                if "N" in coord_tokens[k] or "S" in coord_tokens[k]:
+                    split_idx = k
+                    break
+            if split_idx != -1:
+                lat_tokens = coord_tokens[:split_idx+1]
+                lon_tokens = coord_tokens[split_idx+1:]
+                
+            def parse_tokens_coord(t_list):
+                if not t_list:
+                    return 0.0
+                joined = " ".join(t_list).upper()
+                m_num = re.findall(r"([0-9\.]+)", joined)
+                if len(m_num) >= 2:
+                    return float(m_num[0]) + float(m_num[1]) / 60.0
+                elif len(m_num) == 1:
+                    return float(m_num[0])
+                return 0.0
+                
+            lat_val = parse_tokens_coord(lat_tokens)
+            lon_val = parse_tokens_coord(lon_tokens)
+            
+        def get_num(idx, default=0.0):
+            try:
+                val = tokens[idx]
+                if val in ["-", "N/A", ""]:
+                    return default
+                return float(val)
+            except:
+                return default
+                
+        dist_val = get_num(-19, 0.0)
+        speed_val = get_num(-18, 0.0)
+        rpm_val = int(get_num(-16, 0.0))
+        slip_val = get_num(-15, 0.0)
+        
+        lsfo_rob = get_num(-14, 0.0)
+        mgo_rob = get_num(-13, 0.0)
+        
+        me_lsfo = get_num(-9, 0.0)
+        ae_lsfo = get_num(-8, 0.0)
+        boiler_lsfo = get_num(-7, 0.0)
+        
+        me_mgo = get_num(-6, 0.0)
+        ae_mgo = get_num(-5, 0.0)
+        boiler_mgo = get_num(-4, 0.0)
+        
+        fw_cons = get_num(-3, 0.0)
+        fw_rob = get_num(-1, 0.0)
+        
+        try:
+            date_dt = datetime.strptime(f"{date_label}-2026", "%d-%b-%Y")
+            date_str = date_dt.strftime("%Y-%m-%d")
+        except:
+            date_str = date_label
+            
+        p6_info = page6_data.get(date_label, {"operation": "Idle", "steaming_hrs": 0.0, "remarks": ""})
+        p3_info = page3_data.get(date_label, {
+            "current_speed": 0.0, "current_dir": "—", "swell_height": 0.0, "swell_dir": "—",
+            "wave_height": 0.0, "wind_beaufort": 0, "wind_speed": 0.0, "wind_dir": "—"
+        })
+        
+        reports.append({
+            "date": date_str,
+            "lat": round(lat_val, 3),
+            "lon": round(lon_val, 3),
+            "status": "At Sea" if dist_val > 0 else "At Port",
+            "operation": p6_info["operation"],
+            "condition": "Ballast",
+            "steaming_hrs": p6_info["steaming_hrs"],
+            "distance_sailed": dist_val,
+            "speed_actual": speed_val,
+            "speed_warranted": 12.5,
+            "rpm": rpm_val,
+            "slip_pct": slip_val,
+            "wind_dir": p3_info["wind_dir"],
+            "wind_speed": p3_info["wind_speed"],
+            "wind_beaufort": p3_info["wind_beaufort"],
+            "wave_height": p3_info["wave_height"],
+            "swell_dir": p3_info["swell_dir"],
+            "swell_height": p3_info["swell_height"],
+            "current_dir": p3_info["current_dir"],
+            "current_speed": p3_info["current_speed"],
+            "fuel_vlsfo_rob": lsfo_rob,
+            "fuel_lsmgo_rob": mgo_rob,
+            "fuel_consumed_me": me_lsfo,
+            "fuel_consumed_ae": ae_lsfo,
+            "fuel_consumed_boiler": boiler_lsfo,
+            "fuel_consumed_me_mgo": me_mgo,
+            "fuel_consumed_ae_mgo": ae_mgo,
+            "fuel_consumed_boiler_mgo": boiler_mgo,
+            "fw_consumed": fw_cons,
+            "fw_rob": fw_rob,
+            "remarks": p6_info["remarks"]
+        })
+        
+    return vessel_name, reports
+
+# Try to load initial data from pdf_text.txt
+try:
+    import os
+    _txt_path = os.path.join(os.path.dirname(__file__), 'pdf_text.txt')
+    if os.path.exists(_txt_path):
+        _parsed_vessel, _parsed_reports = load_data_from_pdf_text(_txt_path)
+        if _parsed_vessel and _parsed_reports:
+            VESSEL_INFO["name"] = _parsed_vessel
+            NOON_REPORTS = _parsed_reports
+except Exception as _e:
+    print(f"Warning: Failed to load start data from pdf_text.txt: {_e}")
+
 # Warranted performance (Charter Party)
 CP_WARRANTED = {
     "speed_knots": 12.5,
@@ -333,6 +592,185 @@ CP_WARRANTED = {
     "conditions": "Beaufort ≤ 4, Douglas Sea State ≤ 3",
     "idle_warranted": 5.5
 }
+
+def parse_excel_noon_reports(file_source):
+    import openpyxl
+    from datetime import datetime
+    import re
+    
+    wb = openpyxl.load_workbook(file_source, data_only=True)
+    
+    sheet = None
+    for name in wb.sheetnames:
+        if "GUIDELINE" in name.upper():
+            continue
+        sheet = wb[name]
+        break
+    if not sheet:
+        sheet = wb.active
+        
+    reports = []
+    row_mapping = {}
+    for r in range(1, 100):
+        val2 = sheet.cell(r, 2).value
+        val1 = sheet.cell(r, 1).value
+        header = str(val2 or val1 or "").strip().upper()
+        if header:
+            row_mapping[header] = r
+
+    def get_row(header_text, default_row):
+        header_text = header_text.upper()
+        for k, v in row_mapping.items():
+            if header_text in k:
+                return v
+        return default_row
+
+    r_date = get_row("UTC DATE", 10)
+    r_lat = get_row("LATITUDE", 12)
+    r_lon = get_row("LONGITUDE", 13)
+    r_cond = get_row("VESSEL CONDITION", 14)
+    r_dist = get_row("ENGINE DISTANCE 24 HRS", 23)
+    if "ENGINE DISTANCE 24 HRS" not in row_mapping:
+        r_dist = get_row("DISTANCE SAILED", 22)
+    r_speed = get_row("SPEED LAST 24 HRS", 28)
+    r_rpm = get_row("MAIN ENGINE RPM", 30)
+    r_slip = get_row("AVERAGE SLIP", 31)
+    r_wind_spd = get_row("WIND SPEED", 34)
+    r_wind_dir = get_row("WIND DIRECTION", 35)
+    r_current_dir = get_row("CURRENT DIRECTION", 36)
+    r_bf = get_row("BUEFORT SCALE", 37)
+    r_me_lsfo = get_row("ME LSFO CONSUMPTION", 45)
+    r_ae_lsfo = get_row("AE LSFO CONSUMPTION", 48)
+    r_boiler_lsfo = get_row("BOILER LSFO CONSUMPTION", 51)
+    r_me_mgo = get_row("ME MGO CONSUMPTION", 46)
+    r_ae_mgo = get_row("AE MGO CONSUMPTION", 49)
+    r_boiler_mgo = get_row("BOILER MGO CONSUMPTION", 52)
+    r_lsfo_rob = get_row("ROB LSFO", 60)
+    r_mgo_rob = get_row("ROB MGO", 61)
+    r_fw_cons = get_row("FRESH WATER CONSUMED", 63)
+    r_fw_rob = get_row("FRESH WATER ROB", 65)
+    r_remarks = get_row("OTHER REMARKS IF ANY", 69)
+
+    col = 3
+    while True:
+        date_val = sheet.cell(r_date, col).value
+        if date_val is None:
+            break
+            
+        if isinstance(date_val, datetime):
+            date_str = date_val.strftime("%Y-%m-%d")
+        else:
+            date_str = str(date_val).strip()
+            
+        if not date_str or date_str in ["-", "N/A"]:
+            break
+            
+        def parse_coord(coord_str, is_lat=True):
+            if coord_str is None:
+                return 0.0
+            coord_str = str(coord_str).strip().upper()
+            if coord_str in ["-", "N/A", ""]:
+                return 0.0
+            m = re.findall(r"([0-9\.]+)", coord_str)
+            if len(m) >= 2:
+                deg = float(m[0])
+                mins = float(m[1])
+                val = deg + mins / 60.0
+            elif len(m) == 1:
+                val = float(m[0])
+            else:
+                val = 0.0
+            return val
+
+        lat_val = parse_coord(sheet.cell(r_lat, col).value, is_lat=True)
+        lon_val = parse_coord(sheet.cell(r_lon, col).value, is_lat=False)
+        
+        def get_num(row, default=0.0):
+            val = sheet.cell(row, col).value
+            if val is None or str(val).strip() in ["-", "N/A", "NIL", ""]:
+                return default
+            try:
+                return float(val)
+            except:
+                return default
+
+        dist_val = get_num(r_dist, 0.0)
+        speed_val = get_num(r_speed, 0.0)
+        rpm_val = int(get_num(r_rpm, 0.0))
+        slip_val = get_num(r_slip, 0.0)
+        
+        steaming_hrs = round(dist_val / speed_val, 1) if speed_val > 0 else 0.0
+        
+        cond = str(sheet.cell(r_cond, col).value or "Ballast").strip()
+        status = "At Sea" if dist_val > 0 else "At Port"
+        
+        remarks_val = str(sheet.cell(r_remarks, col).value or "").strip()
+        if dist_val > 0:
+            operation = "Manoeuvring" if "MANOEUVRING" in remarks_val.upper() else "Steaming"
+        else:
+            operation = "Idle"
+            
+        wind_spd = get_num(r_wind_spd, 0.0)
+        bf = int(get_num(r_bf, 0.0))
+
+        wind_dir = get_direction_label(sheet.cell(r_wind_dir, col).value)
+        current_dir = get_direction_label(sheet.cell(r_current_dir, col).value)
+        
+        current_spd_row = get_row("CURRENT SPEED", 0)
+        if current_spd_row > 0:
+            current_spd = get_num(current_spd_row, 0.0)
+        else:
+            current_spd = 0.5 if current_dir != "—" else 0.0
+        
+        me_lsfo = get_num(r_me_lsfo, 0.0)
+        ae_lsfo = get_num(r_ae_lsfo, 0.0)
+        boiler_lsfo = get_num(r_boiler_lsfo, 0.0)
+        me_mgo = get_num(r_me_mgo, 0.0)
+        ae_mgo = get_num(r_ae_mgo, 0.0)
+        boiler_mgo = get_num(r_boiler_mgo, 0.0)
+        
+        lsfo_rob = get_num(r_lsfo_rob, 950.0)
+        mgo_rob = get_num(r_mgo_rob, 245.0)
+        
+        fw_cons = get_num(r_fw_cons, 5.0)
+        fw_rob = get_num(r_fw_rob, 200.0)
+        
+        reports.append({
+            "date": date_str,
+            "lat": round(lat_val, 3),
+            "lon": round(lon_val, 3),
+            "status": status,
+            "operation": operation,
+            "condition": "Ballast" if "BALLAST" in cond.upper() else "Laden",
+            "steaming_hrs": steaming_hrs,
+            "distance_sailed": dist_val,
+            "speed_actual": speed_val,
+            "speed_warranted": 12.5,
+            "rpm": rpm_val,
+            "slip_pct": slip_val,
+            "wind_dir": wind_dir,
+            "wind_speed": wind_spd,
+            "wind_beaufort": bf,
+            "wave_height": 0.5 if bf > 1 else 0.0,
+            "swell_dir": wind_dir,
+            "swell_height": 0.4 if bf > 1 else 0.0,
+            "current_dir": current_dir,
+            "current_speed": current_spd,
+            "fuel_vlsfo_rob": lsfo_rob,
+            "fuel_lsmgo_rob": mgo_rob,
+            "fuel_consumed_me": me_lsfo,
+            "fuel_consumed_ae": ae_lsfo,
+            "fuel_consumed_boiler": boiler_lsfo,
+            "fuel_consumed_me_mgo": me_mgo,
+            "fuel_consumed_ae_mgo": ae_mgo,
+            "fuel_consumed_boiler_mgo": boiler_mgo,
+            "fw_consumed": fw_cons,
+            "fw_rob": fw_rob,
+            "remarks": remarks_val
+        })
+        col += 1
+        
+    return reports
 
 # ─────────────────────────────────────────────
 # PERFORMANCE CALCULATIONS
@@ -534,6 +972,70 @@ def route_optimize():
         "optimized": optimized,
         "savings": savings
     })
+
+
+@app.route('/api/upload-excel', methods=['POST'])
+def upload_excel():
+    from flask import request
+    import io
+    
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part in the request"}), 400
+        
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+        
+    if file and file.filename.endswith('.xlsx'):
+        try:
+            file_bytes = io.BytesIO(file.read())
+            parsed_reports = parse_excel_noon_reports(file_bytes)
+            
+            if not parsed_reports:
+                return jsonify({"error": "No valid records found in the spreadsheet. Make sure you upload a valid Noon position report sheet."}), 400
+                
+            # Update global dataset in place
+            global NOON_REPORTS
+            NOON_REPORTS.clear()
+            NOON_REPORTS.extend(parsed_reports)
+            
+            # Extract Tech Manager and Vessel Name from the sheet if available
+            try:
+                import openpyxl
+                file_bytes.seek(0)
+                wb = openpyxl.load_workbook(file_bytes, data_only=True)
+                sheet = None
+                for name in wb.sheetnames:
+                    if "GUIDELINE" in name.upper():
+                        continue
+                    sheet = wb[name]
+                    break
+                if sheet:
+                    for r in range(1, 20):
+                        val1 = str(sheet.cell(r, 1).value or "").strip().upper()
+                        if "VESSEL" in val1:
+                            val2 = sheet.cell(r, 2).value
+                            if val2:
+                                VESSEL_INFO["name"] = str(val2).strip()
+                        elif "TECH MANAGER" in val1:
+                            val2 = sheet.cell(r, 2).value
+                            if val2:
+                                VESSEL_INFO["tech_manager"] = str(val2).strip()
+            except Exception as e:
+                print(f"Warning extracting vessel info: {e}")
+                
+            return jsonify({
+                "message": "File parsed successfully",
+                "count": len(parsed_reports),
+                "vessel": VESSEL_INFO
+            })
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return jsonify({"error": f"Failed to parse Excel file: {str(e)}"}), 500
+    else:
+        return jsonify({"error": "Invalid file type. Only .xlsx files are supported."}), 400
 
 
 if __name__ == '__main__':

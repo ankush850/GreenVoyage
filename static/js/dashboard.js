@@ -340,7 +340,7 @@ function buildCharts(reports, cp) {
             legend: { display: false },
             tooltip: {
                 enabled: true,
-                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                backgroundColor: 'rgba(8, 8, 10, 0.98)',
                 titleColor: '#f3f4f6',
                 bodyColor: '#9ca3af',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -412,7 +412,7 @@ function buildCharts(reports, cp) {
             legend: { display: false },
             tooltip: {
                 enabled: true,
-                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                backgroundColor: 'rgba(8, 8, 10, 0.98)',
                 titleColor: '#f3f4f6',
                 bodyColor: '#9ca3af',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -473,8 +473,8 @@ function buildCharts(reports, cp) {
     const speedCtx = document.getElementById('speedChart').getContext('2d');
     
     const speedGrad = speedCtx.createLinearGradient(0, 0, 0, 220);
-    speedGrad.addColorStop(0, 'rgba(0, 168, 204, 0.35)');
-    speedGrad.addColorStop(1, 'rgba(0, 168, 204, 0.0)');
+    speedGrad.addColorStop(0, 'rgba(0, 229, 255, 0.35)');
+    speedGrad.addColorStop(1, 'rgba(0, 229, 255, 0.0)');
 
     speedChartInstance = new Chart(speedCtx, {
         type: 'line',
@@ -484,12 +484,12 @@ function buildCharts(reports, cp) {
                 {
                     label: 'Actual Speed (knots)',
                     data: speedActuals,
-                    borderColor: '#00a8cc',
+                    borderColor: '#00e5ff',
                     backgroundColor: speedGrad,
                     fill: true,
                     tension: 0.3,
                     borderWidth: 2.5,
-                    pointBackgroundColor: '#00a8cc',
+                    pointBackgroundColor: '#00e5ff',
                     pointRadius: 4,
                     pointHoverRadius: 6,
                     spanGaps: true
@@ -497,7 +497,7 @@ function buildCharts(reports, cp) {
                 {
                     label: 'Warranted Speed (knots)',
                     data: speedWarrants,
-                    borderColor: '#ff4757',
+                    borderColor: '#ff3b30',
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0,
@@ -516,8 +516,8 @@ function buildCharts(reports, cp) {
     const fuelCtx = document.getElementById('fuelChart').getContext('2d');
     
     const fuelGrad = fuelCtx.createLinearGradient(0, 0, 0, 220);
-    fuelGrad.addColorStop(0, 'rgba(12, 204, 153, 0.35)');
-    fuelGrad.addColorStop(1, 'rgba(12, 204, 153, 0.0)');
+    fuelGrad.addColorStop(0, 'rgba(0, 255, 136, 0.35)');
+    fuelGrad.addColorStop(1, 'rgba(0, 255, 136, 0.0)');
 
     fuelChartInstance = new Chart(fuelCtx, {
         type: 'line',
@@ -527,12 +527,12 @@ function buildCharts(reports, cp) {
                 {
                     label: 'Actual Cons (MT)',
                     data: fuelActuals,
-                    borderColor: '#0c9',
+                    borderColor: '#00ff88',
                     backgroundColor: fuelGrad,
                     fill: true,
                     tension: 0.3,
                     borderWidth: 2.5,
-                    pointBackgroundColor: '#0c9',
+                    pointBackgroundColor: '#00ff88',
                     pointRadius: 4,
                     pointHoverRadius: 6,
                     spanGaps: true
@@ -540,7 +540,7 @@ function buildCharts(reports, cp) {
                 {
                     label: 'Warranted Cons Limit (MT)',
                     data: fuelWarrants,
-                    borderColor: '#ff4757',
+                    borderColor: '#ff3b30',
                     borderDash: [5, 5],
                     fill: false,
                     tension: 0,
@@ -562,6 +562,246 @@ async function loadOfficialReportData() {
 
     const reports = data.daily_data;
     const cp = data.cp_warranted;
+    const metrics = data.metrics;
+    const vessel = data.vessel;
+
+    // Helper function for formatting date e.g. "2026-04-22" -> "22-Apr"
+    const formatDate = (dateStr) => {
+        try {
+            const d = new Date(dateStr);
+            const standardMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${d.getDate()}-${standardMonths[d.getMonth()]}`;
+        } catch(e) {
+            return dateStr;
+        }
+    };
+
+    // ─────────────────────────────────────────────
+    // Page 1: Report Summary Page dynamic population
+    // ─────────────────────────────────────────────
+    const reportTitle = document.getElementById('report-title');
+    const reportSubtitle = document.getElementById('report-subtitle');
+    if (reportTitle) {
+        reportTitle.innerText = `Vessel Performance Report — M/T ${vessel.name}`;
+    }
+    if (reportSubtitle) {
+        reportSubtitle.innerText = `${vessel.condition} Voyage: ${vessel.voyage} | ${vessel.period}`;
+    }
+
+    // Reporting Days: count occurrences
+    const totalDays = reports.length;
+    const portDays = reports.filter(r => r.status === 'At Port').length;
+    const seaDays = reports.filter(r => r.status === 'At Sea').length;
+    const anchorageDays = reports.filter(r => r.status === 'At Port' && r.steaming_hrs === 0).length;
+    
+    const p1ValDays = document.getElementById('p1-val-days');
+    const p1SubDays = document.getElementById('p1-sub-days');
+    if (p1ValDays) p1ValDays.innerText = totalDays;
+    if (p1SubDays) {
+        p1SubDays.innerText = `Days (${portDays} Port, ${seaDays} Sea, ${anchorageDays} Anchorage)`;
+    }
+
+    // Distance
+    const p1ValDist = document.getElementById('p1-val-dist');
+    if (p1ValDist) p1ValDist.innerText = `${metrics.total_distance_nm.toFixed(2)} nm`;
+
+    // Speed
+    const p1ValSpeed = document.getElementById('p1-val-speed');
+    const p1SubSpeed = document.getElementById('p1-sub-speed');
+    if (p1ValSpeed) p1ValSpeed.innerText = `${metrics.avg_speed_knots.toFixed(2)} kts`;
+    if (p1SubSpeed) p1SubSpeed.innerText = `CP Warranted: ${metrics.warranted_speed_knots.toFixed(1)} kts`;
+
+    // LSFO Consumed
+    const p1ValLsfo = document.getElementById('p1-val-lsfo');
+    const p1SubLsfo = document.getElementById('p1-sub-lsfo');
+    if (p1ValLsfo) p1ValLsfo.innerText = `${metrics.total_lsfo_consumed_mt.toFixed(3)} MT`;
+    if (p1SubLsfo) p1SubLsfo.innerText = `Warranted: ${metrics.warranted_lsfo_consumed_mt.toFixed(1)} MT`;
+
+    // LSFO ROB (Close)
+    const p1ValLsfoRob = document.getElementById('p1-val-lsfo-rob');
+    const p1SubLsfoRob = document.getElementById('p1-sub-lsfo-rob');
+    if (reports.length > 0) {
+        const lastReport = reports[reports.length - 1];
+        const firstReport = reports[0];
+        if (p1ValLsfoRob) p1ValLsfoRob.innerText = `${lastReport.fuel_vlsfo_rob.toFixed(2)} MT`;
+        if (p1SubLsfoRob) p1SubLsfoRob.innerText = `Opening ROB: ${firstReport.fuel_vlsfo_rob.toFixed(2)} MT`;
+    }
+
+    // MGO Consumed
+    const p1ValMgo = document.getElementById('p1-val-mgo');
+    if (p1ValMgo) p1ValMgo.innerText = `${metrics.total_mgo_consumed_mt.toFixed(3)} MT`;
+
+    // MGO ROB (Close)
+    const p1ValMgoRob = document.getElementById('p1-val-mgo-rob');
+    const p1SubMgoRob = document.getElementById('p1-sub-mgo-rob');
+    if (reports.length > 0) {
+        const lastReport = reports[reports.length - 1];
+        const firstReport = reports[0];
+        if (p1ValMgoRob) p1ValMgoRob.innerText = `${lastReport.fuel_lsmgo_rob.toFixed(2)} MT`;
+        if (p1SubMgoRob) p1SubMgoRob.innerText = `Opening ROB: ${firstReport.fuel_lsmgo_rob.toFixed(2)} MT`;
+    }
+
+    // Avg Daily LSFO
+    const p1ValDailyLsfo = document.getElementById('p1-val-daily-lsfo');
+    const p1SubDailyLsfo = document.getElementById('p1-sub-daily-lsfo');
+    if (p1ValDailyLsfo) p1ValDailyLsfo.innerText = `${metrics.avg_daily_lsfo.toFixed(1)} MT/day`;
+    if (p1SubDailyLsfo) p1SubDailyLsfo.innerText = `At Anchor / Port operations`;
+
+    // Narrative Log Generation
+    const narrativeList = document.getElementById('p1-narrative-list');
+    if (narrativeList) {
+        narrativeList.innerHTML = '';
+        const bullets = generateNarrativeLog(reports, metrics, vessel, formatDate);
+        bullets.forEach(b => {
+            const li = document.createElement('li');
+            li.innerText = b;
+            narrativeList.appendChild(li);
+        });
+    }
+
+    // ─────────────────────────────────────────────
+    // Page 5: Voyage Summary Page dynamic population
+    // ─────────────────────────────────────────────
+    const legBody = document.getElementById('report-leg-table-body');
+    if (legBody) {
+        legBody.innerHTML = '';
+        
+        const groupedLegs = [];
+        let currentLeg = null;
+        
+        reports.forEach((r, idx) => {
+            const dateLbl = formatDate(r.date);
+            const status = r.status === 'At Sea' ? 'Steaming' : (r.operation.includes('Manouver') ? 'Manoeuvring' : 'Idle');
+            const opName = r.status === 'At Sea' ? 'Steaming / Transit' : (r.operation.includes('Manouver') ? 'Manoeuvring/Anchor' : `Idle – ${r.remarks.split('—')[0].replace('Anchored ', '').trim()}`);
+            
+            if (currentLeg && currentLeg.status === status && currentLeg.opName === opName) {
+                currentLeg.endDate = dateLbl;
+                currentLeg.distance += r.distance_sailed;
+                currentLeg.steamingHrs += r.steaming_hrs;
+                currentLeg.speeds.push(r.speed_actual);
+            } else {
+                if (currentLeg) {
+                    groupedLegs.push(currentLeg);
+                }
+                currentLeg = {
+                    startDate: dateLbl,
+                    endDate: dateLbl,
+                    status: status,
+                    opName: opName,
+                    distance: r.distance_sailed,
+                    steamingHrs: r.steaming_hrs,
+                    speeds: r.speed_actual > 0 ? [r.speed_actual] : []
+                };
+            }
+        });
+        if (currentLeg) {
+            groupedLegs.push(currentLeg);
+        }
+        
+        groupedLegs.forEach(leg => {
+            const tr = document.createElement('tr');
+            const dateRange = leg.startDate === leg.endDate ? leg.startDate : `${leg.startDate.split('-')[0]}–${leg.endDate}`;
+            const avgLegSpd = leg.speeds.length > 0 ? (leg.speeds.reduce((acc, s) => acc + s, 0) / leg.speeds.length) : 0;
+            
+            let statusBadge = '';
+            if (leg.status === 'Steaming') {
+                if (avgLegSpd >= cp.speed_knots - 0.5) {
+                    statusBadge = '<span class="badge badge-success">Meeting CP</span>';
+                } else {
+                    statusBadge = '<span class="badge badge-danger">Underperforming</span>';
+                }
+            } else if (leg.opName.includes('Manoeuvring')) {
+                statusBadge = '<span class="badge badge-warning">Manoeuvring Only</span>';
+            } else {
+                statusBadge = '<span class="badge badge-info">Below CP</span>';
+            }
+            
+            if (leg.opName.includes('Manoeuvring') || leg.status === 'Steaming') {
+                tr.className = 'highlight-row';
+            }
+            
+            tr.innerHTML = `
+                <td>${dateRange}</td>
+                <td>${leg.distance.toFixed(2)} nm</td>
+                <td>${leg.opName}</td>
+                <td>${avgLegSpd > 0 ? avgLegSpd.toFixed(2) + ' kts' : '0.00 kts'}</td>
+                <td>${statusBadge}</td>
+            `;
+            legBody.appendChild(tr);
+        });
+    }
+
+    const matrixBody = document.getElementById('report-matrix-table-body');
+    if (matrixBody) {
+        matrixBody.innerHTML = '';
+        
+        // Speed
+        const speedVar = metrics.speed_variance_knots;
+        const speedVarClass = speedVar >= -0.5 ? 'badge-success' : 'badge-danger';
+        const trSpeed = document.createElement('tr');
+        trSpeed.innerHTML = `
+            <td>Avg Steaming Speed</td>
+            <td>${metrics.warranted_speed_knots.toFixed(2)} Kts (Eco)</td>
+            <td><strong>${metrics.avg_speed_knots.toFixed(2)} Kts</strong></td>
+            <td><span class="badge ${speedVarClass}">${speedVar >= 0 ? '+' : ''}${speedVar.toFixed(2)} Kts</span></td>
+        `;
+        matrixBody.appendChild(trSpeed);
+
+        // LSFO Consumed
+        const fuelVar = metrics.fuel_variance_mt;
+        const fuelVarClass = fuelVar <= 0 ? 'badge-success' : 'badge-danger';
+        const trLSFO = document.createElement('tr');
+        trLSFO.innerHTML = `
+            <td>Total LSFO Consumed</td>
+            <td>${metrics.warranted_lsfo_consumed_mt.toFixed(3)} MT</td>
+            <td><strong>${metrics.total_lsfo_consumed_mt.toFixed(3)} MT</strong></td>
+            <td><span class="badge ${fuelVarClass}">${fuelVar >= 0 ? '+' : ''}${fuelVar.toFixed(3)} MT</span></td>
+        `;
+        matrixBody.appendChild(trLSFO);
+
+        // Avg Daily LSFO (Anchorage)
+        const dailyLSFO = metrics.avg_daily_lsfo;
+        const dailyLSFOVar = dailyLSFO - metrics.warranted_daily_cons;
+        const dailyVarClass = dailyLSFOVar <= 0 ? 'badge-success' : 'badge-danger';
+        const trDailyLSFO = document.createElement('tr');
+        trDailyLSFO.innerHTML = `
+            <td>Avg Daily LSFO (Anch.)</td>
+            <td>${metrics.warranted_daily_cons.toFixed(2)} MT/Day</td>
+            <td><strong>${dailyLSFO.toFixed(2)} MT/Day</strong></td>
+            <td><span class="badge ${dailyVarClass}">${dailyLSFOVar >= 0 ? '+' : ''}${dailyLSFOVar.toFixed(2)} MT/Day</span></td>
+        `;
+        matrixBody.appendChild(trDailyLSFO);
+
+        // MGO Consumed
+        const trMGO = document.createElement('tr');
+        trMGO.innerHTML = `
+            <td>MGO Consumed</td>
+            <td>—</td>
+            <td><strong>${metrics.total_mgo_consumed_mt.toFixed(3)} MT</strong></td>
+            <td>—</td>
+        `;
+        matrixBody.appendChild(trMGO);
+
+        // Idle Days at Anchor
+        const trIdle = document.createElement('tr');
+        trIdle.innerHTML = `
+            <td>Idle Days at Anchor</td>
+            <td>N/A</td>
+            <td><strong>${metrics.idle_days} Days</strong></td>
+            <td>—</td>
+        `;
+        matrixBody.appendChild(trIdle);
+
+        // Total Distance
+        const trDist = document.createElement('tr');
+        trDist.innerHTML = `
+            <td>Total Distance</td>
+            <td>—</td>
+            <td><strong>${metrics.total_distance_nm.toFixed(2)} nm</strong></td>
+            <td>—</td>
+        `;
+        matrixBody.appendChild(trDist);
+    }
 
     // ─────────────────────────────────────────────
     // Page 3: Master Noon Report Table
@@ -734,7 +974,7 @@ function buildPage7Charts(reports, cp) {
             legend: { display: false },
             tooltip: {
                 enabled: true,
-                backgroundColor: 'rgba(15, 20, 28, 0.95)',
+                backgroundColor: 'rgba(8, 8, 10, 0.98)',
                 titleColor: '#f3f4f6',
                 bodyColor: '#9ca3af',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
@@ -797,14 +1037,14 @@ function buildPage7Charts(reports, cp) {
                     {
                         label: 'Actual LSFO Cons (MT)',
                         data: lsfoCons,
-                        backgroundColor: '#0c9',
+                        backgroundColor: '#00ff88',
                         borderRadius: 4
                     },
                     {
                         label: 'CP Warranted Limit (5.5 MT/D)',
                         data: Array(reports.length).fill(cp.idle_warranted),
                         type: 'line',
-                        borderColor: '#ff4757',
+                        borderColor: '#ff3b30',
                         borderDash: [5, 5],
                         pointRadius: 0,
                         fill: false
@@ -827,7 +1067,7 @@ function buildPage7Charts(reports, cp) {
                 datasets: [{
                     label: 'LSFO ROB (MT)',
                     data: lsfoROB,
-                    borderColor: '#00a8cc',
+                    borderColor: '#00e5ff',
                     borderWidth: 2.5,
                     fill: false,
                     tension: 0.2,
@@ -857,7 +1097,7 @@ function buildPage7Charts(reports, cp) {
                     {
                         label: 'Actual Speed (knots)',
                         data: speeds,
-                        borderColor: '#00a8cc',
+                        borderColor: '#00e5ff',
                         borderWidth: 2.5,
                         spanGaps: true,
                         pointRadius: 4,
@@ -866,7 +1106,7 @@ function buildPage7Charts(reports, cp) {
                     {
                         label: 'Warranted Speed (knots)',
                         data: Array(reports.length).fill(cp.speed_knots),
-                        borderColor: '#ff4757',
+                        borderColor: '#ff3b30',
                         borderDash: [5, 5],
                         pointRadius: 0,
                         fill: false
@@ -895,7 +1135,7 @@ function buildPage7Charts(reports, cp) {
                 datasets: [{
                     label: 'MGO ROB (MT)',
                     data: mgoROB,
-                    borderColor: '#eccc68',
+                    borderColor: '#ffb300',
                     borderWidth: 2.5,
                     fill: false,
                     tension: 0.1,
@@ -925,7 +1165,7 @@ function buildPage8Charts() {
                 labels: ['Idle – Sungai Linggi (67%)', 'Manoeuvring / Transit (22%)', 'Idle – Singapore EOPL (11%)'],
                 datasets: [{
                     data: [67, 22, 11],
-                    backgroundColor: ['#00a8cc', '#0c9', '#ffa502'],
+                    backgroundColor: ['#00e5ff', '#00ff88', '#ffb300'],
                     borderWidth: 0
                 }]
             },
@@ -952,7 +1192,7 @@ function buildPage8Charts() {
                 labels: ['Aux. Engines (53%)', 'Main Engine (27%)', 'Boiler (20%)'],
                 datasets: [{
                     data: [53, 27, 20],
-                    backgroundColor: ['#0c9', '#00a8cc', '#ff4757'],
+                    backgroundColor: ['#00ff88', '#00e5ff', '#ff3b30'],
                     borderWidth: 0
                 }]
             },
@@ -1003,8 +1243,8 @@ function buildPage9Charts(reports) {
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'BF Reported', data: reportedBF, borderColor: '#00a8cc', fill: false, borderWidth: 2 },
-                    { label: 'BF Actual', data: actualBF, borderColor: '#ffa502', fill: false, borderWidth: 1.5, borderDash: [3, 3] }
+                    { label: 'BF Reported', data: reportedBF, borderColor: '#00e5ff', fill: false, borderWidth: 2 },
+                    { label: 'BF Actual', data: actualBF, borderColor: '#ffb300', fill: false, borderWidth: 1.5, borderDash: [3, 3] }
                 ]
             },
             options: commonOptions
@@ -1020,8 +1260,8 @@ function buildPage9Charts(reports) {
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Reported Wind (kts)', data: windSpdRep, borderColor: '#ff4757', fill: false, borderWidth: 2 },
-                    { label: 'Actual Wind (kts)', data: windSpdAct, borderColor: '#0c9', fill: false, borderWidth: 1.5 }
+                    { label: 'Reported Wind (kts)', data: windSpdRep, borderColor: '#ff3b30', fill: false, borderWidth: 2 },
+                    { label: 'Actual Wind (kts)', data: windSpdAct, borderColor: '#00ff88', fill: false, borderWidth: 1.5 }
                 ]
             },
             options: commonOptions
@@ -1037,8 +1277,8 @@ function buildPage9Charts(reports) {
             data: {
                 labels: labels,
                 datasets: [
-                    { label: 'Wave Height (m)', data: waveAct, borderColor: '#ffa502', fill: false, spanGaps: true },
-                    { label: 'Swell Height (m)', data: swellAct, borderColor: '#00a8cc', fill: false, spanGaps: true }
+                    { label: 'Wave Height (m)', data: waveAct, borderColor: '#ffb300', fill: false, spanGaps: true },
+                    { label: 'Swell Height (m)', data: swellAct, borderColor: '#00e5ff', fill: false, spanGaps: true }
                 ]
             },
             options: commonOptions
@@ -1053,7 +1293,7 @@ function buildPage9Charts(reports) {
             type: 'line',
             data: {
                 labels: labels,
-                datasets: [{ label: 'Current Speed (kts)', data: currentAct, borderColor: '#0c9', fill: true, backgroundColor: 'rgba(12,204,153,0.1)' }]
+                datasets: [{ label: 'Current Speed (kts)', data: currentAct, borderColor: '#00ff88', fill: true, backgroundColor: 'rgba(0, 255, 136, 0.1)' }]
             },
             options: commonOptions
         });
@@ -1082,7 +1322,7 @@ function buildPage10Map(reports) {
         
         L.circleMarker([r.lat, r.lon], {
             radius: 6,
-            fillColor: r.status === 'At Sea' ? '#00a8cc' : '#ffa502',
+            fillColor: r.status === 'At Sea' ? '#00e5ff' : '#ffb300',
             color: '#fff',
             weight: 1,
             fillOpacity: 0.8
@@ -1090,7 +1330,7 @@ function buildPage10Map(reports) {
     });
 
     L.polyline(latLns, {
-        color: 'rgba(12, 204, 153, 0.6)',
+        color: 'rgba(0, 255, 136, 0.6)',
         weight: 3
     }).addTo(windowReportMap);
 }
@@ -1102,3 +1342,165 @@ function refreshData() {
         window.initMapData();
     }
 }
+
+async function uploadExcel(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Show loading spinner in upload button
+    const uploadLabel = input.parentElement;
+    const originalText = uploadLabel.innerHTML;
+    uploadLabel.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading...<input type="file" id="excel-upload" accept=".xlsx" style="display: none;" onchange="uploadExcel(this)" />`;
+    uploadLabel.style.pointerEvents = 'none';
+    
+    try {
+        const response = await fetch('/api/upload-excel', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            alert(`Success! Loaded ${result.count} records from ${file.name}`);
+            
+            // Destroy the Page 10 Leaflet map instance so it can be re-rendered cleanly
+            if (windowReportMap) {
+                windowReportMap.remove();
+                windowReportMap = null;
+            }
+            
+            refreshData();
+        } else {
+            alert(`Error: ${result.error || 'Failed to upload and parse file.'}`);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('An error occurred during file upload.');
+    } finally {
+        // Restore button state
+        uploadLabel.innerHTML = originalText;
+        uploadLabel.style.pointerEvents = 'auto';
+    }
+}
+
+// ─────────────────────────────────────────────
+// Narrative generator & Print theme functions
+// ─────────────────────────────────────────────
+
+function generateNarrativeLog(reports, metrics, vessel, formatDate) {
+    const bullets = [];
+    if (!reports || reports.length === 0) return bullets;
+
+    const first = reports[0];
+    
+    // Bullet 1: Opening period
+    bullets.push(`Vessel opened reporting period on ${formatDate(first.date)} at ${first.status} (${first.operation}). Opening LSFO ROB was ${first.fuel_vlsfo_rob.toFixed(2)} MT and MGO ROB was ${first.fuel_lsmgo_rob.toFixed(2)} MT.`);
+
+    // Bullet 2: Steaming days and activities
+    const steamingDays = reports.filter(r => r.distance_sailed > 0);
+    if (steamingDays.length > 0) {
+        const totalDist = steamingDays.reduce((acc, r) => acc + r.distance_sailed, 0);
+        const avgSpeed = steamingDays.reduce((acc, r) => acc + r.speed_actual, 0) / steamingDays.length;
+        const datesStr = steamingDays.map(r => formatDate(r.date)).join(', ');
+        bullets.push(`Steaming activity recorded on ${datesStr}: Vessel sailed a total steaming distance of ${totalDist.toFixed(2)} nm at an average speed of ${avgSpeed.toFixed(2)} knots.`);
+    }
+
+    // Bullet 3: Port and Anchorage stays
+    const anchorDays = reports.filter(r => r.status === 'At Port' && r.steaming_hrs === 0);
+    if (anchorDays.length > 0) {
+        const locationRemarks = anchorDays[0].remarks || "anchorage";
+        const cleanedRemarks = locationRemarks.split('—')[0].replace('Anchored ', '').trim();
+        bullets.push(`Vessel spent ${anchorDays.length} days anchored/idle (predominantly awaiting orders or loading instructions at ${cleanedRemarks}).`);
+    }
+
+    // Bullet 4: Weather conditions
+    const highWindDays = reports.filter(r => r.wind_beaufort > 4);
+    if (highWindDays.length > 0) {
+        bullets.push(`Weather exclusions applied for ${highWindDays.length} day(s) due to adverse weather exceeding Beaufort 4 conditions.`);
+    } else {
+        bullets.push(`No heavy weather recorded during the entire reporting period. All sea passage days are fully qualifying for Charter Party performance calculations.`);
+    }
+
+    // Bullet 5: Fuel consumption summary
+    const totalME_lsfo = reports.reduce((acc, r) => acc + r.fuel_consumed_me, 0);
+    const totalAE_lsfo = reports.reduce((acc, r) => acc + r.fuel_consumed_ae, 0);
+    const totalBoiler_lsfo = reports.reduce((acc, r) => acc + r.fuel_consumed_boiler, 0);
+    bullets.push(`Total LSFO consumed during the period was ${metrics.total_lsfo_consumed_mt.toFixed(3)} MT (ME: ${totalME_lsfo.toFixed(3)} MT | AE: ${totalAE_lsfo.toFixed(2)} MT | Boiler: ${totalBoiler_lsfo.toFixed(2)} MT). Total MGO consumed was ${metrics.total_mgo_consumed_mt.toFixed(3)} MT.`);
+
+    return bullets;
+}
+
+function setChartsPrintTheme(isPrint) {
+    const gridColor = isPrint ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.05)';
+    const tickColor = isPrint ? '#4b5563' : '#9ca3af';
+    const labelColor = isPrint ? '#1f2937' : '#9ca3af';
+
+    const charts = [
+        rLSFOConsChart,
+        rLSFOROBChart,
+        rSpeedChart,
+        rMGOROBChart,
+        rTimeUtilChart,
+        rFuelUtilChart,
+        rBeaufortChart,
+        rWindChart,
+        rWaveChart,
+        rCurrentChart
+    ];
+
+    charts.forEach(chart => {
+        if (!chart) return;
+        
+        // Update scales if they exist
+        if (chart.options.scales) {
+            if (chart.options.scales.x) {
+                if (chart.options.scales.x.grid) chart.options.scales.x.grid.color = gridColor;
+                if (chart.options.scales.x.ticks) chart.options.scales.x.ticks.color = tickColor;
+            }
+            if (chart.options.scales.y) {
+                if (chart.options.scales.y.grid) chart.options.scales.y.grid.color = gridColor;
+                if (chart.options.scales.y.ticks) chart.options.scales.y.ticks.color = tickColor;
+            }
+        }
+        
+        // Update legends
+        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+            chart.options.plugins.legend.labels.color = labelColor;
+        }
+
+        chart.update();
+    });
+}
+
+function exportReport() {
+    // Navigate to Official Report tab to ensure everything is rendered
+    const reportLink = document.querySelector('.nav-link[data-tab="official-report"]');
+    if (reportLink && !reportLink.classList.contains('active')) {
+        reportLink.click();
+    }
+    
+    // Invalidate map size to make sure it fills the screen
+    if (windowReportMap) {
+        windowReportMap.invalidateSize();
+    }
+    
+    // Brief timeout to let styles apply, map load tiles, and page settle
+    setTimeout(() => {
+        window.print();
+    }, 300);
+}
+
+// Bind print events to adjust chart scales for print-friendly view
+window.addEventListener('beforeprint', () => {
+    setChartsPrintTheme(true);
+    if (windowReportMap) {
+        windowReportMap.invalidateSize();
+    }
+});
+
+window.addEventListener('afterprint', () => {
+    setChartsPrintTheme(false);
+});

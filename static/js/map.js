@@ -44,7 +44,7 @@ async function initMapData() {
             if (p.speed > 0) label += `<strong>Speed:</strong> ${p.speed} kn<br/>`;
             label += `<strong>Wind Force:</strong> Beaufort ${p.beaufort}`;
 
-            const color = p.status.includes('COSP') ? '#0c9' : (p.status.includes('EOSP') ? '#ffa502' : '#00a8cc');
+            const color = p.status.includes('COSP') ? '#00ff88' : (p.status.includes('EOSP') ? '#ffb300' : '#00e5ff');
             L.circleMarker([p.lat, p.lon], {
                 radius: idx === 0 || idx === trackPoints.length - 1 ? 7 : 5,
                 fillColor: color,
@@ -56,7 +56,7 @@ async function initMapData() {
 
         // Connect historical points with a path
         L.polyline(latLns, {
-            color: 'rgba(0, 168, 204, 0.4)',
+            color: 'rgba(0, 229, 255, 0.4)',
             weight: 3,
             dashArray: '5, 5'
         }).addTo(trackLayerGroup);
@@ -82,8 +82,8 @@ async function initMapData() {
 
             L.circleMarker([w.lat, w.lon], {
                 radius: 4,
-                fillColor: w.risk_level === 'LOW' ? '#0c9' : '#ffa502',
-                color: '#111',
+                fillColor: w.risk_level === 'LOW' ? '#00ff88' : '#ffb300',
+                color: '#000',
                 weight: 1,
                 fillOpacity: 0.6
             }).bindPopup(desc).addTo(routeLayerGroup);
@@ -100,7 +100,7 @@ function renderRoutesOnMap() {
 
     // Direct Route Line
     const directPolyline = L.polyline(directPoints, {
-        color: '#ff4757',
+        color: '#ff3b30',
         weight: activeRouteType === 'direct' ? 4 : 2,
         opacity: activeRouteType === 'direct' ? 0.9 : 0.4,
         dashArray: activeRouteType === 'direct' ? null : '3, 6'
@@ -110,7 +110,7 @@ function renderRoutesOnMap() {
 
     // Weather Optimized Route Line
     const optPolyline = L.polyline(optimizedPoints, {
-        color: '#0c9',
+        color: '#00ff88',
         weight: activeRouteType === 'optimized' ? 4 : 2,
         opacity: activeRouteType === 'optimized' ? 0.9 : 0.4,
         dashArray: activeRouteType === 'optimized' ? null : '3, 6'
